@@ -57,7 +57,14 @@ app.get('/', (req, res) => {
     res.json({ message: 'Calorie Tracker API', status: 'running' });
 });
 
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-});
+// Export app for serverless functions, or start server if running directly
+if (require.main === module) {
+    // Running directly (development)
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+    });
+} else {
+    // Exported as module (for serverless)
+    module.exports = app;
+}
 
