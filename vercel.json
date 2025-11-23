@@ -1,8 +1,8 @@
 {
   "version": 2,
   "framework": "create-react-app",
-  "installCommand": "cd frontend && npm install",
-  "buildCommand": "cd frontend && npm run build",
+  "installCommand": "cd frontend && npm install && cd ../backend && npm install",
+  "buildCommand": "cd frontend && npm install && npm run build",
   "devCommand": "cd frontend && npm start",
   "builds": [
     {
@@ -11,12 +11,16 @@
       "config": {
         "distDir": "build"
       }
+    },
+    {
+      "src": "api/index.js",
+      "use": "@vercel/node"
     }
   ],
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "src": "/api/(.*)",
+      "dest": "api/index.js"
     },
     {
       "source": "/(.*)",
@@ -24,7 +28,3 @@
     }
   ]
 }
-
-
-
-
