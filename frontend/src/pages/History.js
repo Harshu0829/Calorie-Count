@@ -18,9 +18,7 @@ const History = () => {
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
-  useEffect(() => {
-    fetchMonthlyMeals();
-  }, [fetchMonthlyMeals]);
+
 
   const formatManualMeal = (meal) => ({
     ...meal,
@@ -79,6 +77,10 @@ const History = () => {
       setLoading(false);
     }
   }, [currentMonth, currentYear]);
+
+  useEffect(() => {
+    fetchMonthlyMeals();
+  }, [fetchMonthlyMeals]);
 
   const getDateMeals = (day) => {
     const date = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];

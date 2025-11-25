@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaUser, FaCog, FaSignOutAlt, FaEdit, FaSave, FaTimes, FaHistory } from 'react-icons/fa';
+import { FaUser, FaCog, FaSignOutAlt, FaSave, FaTimes, FaHistory } from 'react-icons/fa';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import BottomNavigation from '../components/BottomNavigation';

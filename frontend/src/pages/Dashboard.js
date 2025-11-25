@@ -17,7 +17,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [streak, setStreak] = useState(0);
   const [achievements, setAchievements] = useState([]);
-  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [date] = useState(new Date().toISOString().split('T')[0]);
   const [editingMeal, setEditingMeal] = useState(null);
   const getMealTypeByTime = () => {
     const hour = new Date().getHours();
@@ -45,12 +45,7 @@ const Dashboard = () => {
 
   const [dailyQuote] = useState(motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)]);
 
-  useEffect(() => {
-    if (authUser) {
-      setUser(authUser);
-      fetchDashboardData();
-    }
-  }, [date, authUser, fetchDashboardData]);
+
 
   const calculateManualTotals = (manualList = []) => {
     return manualList.reduce(
@@ -64,7 +59,7 @@ const Dashboard = () => {
     );
   };
 
-  const calculateStreak = async (currentDate) => {
+  const calculateStreak = useCallback(async (currentDate) => {
     try {
       // Fetch last 30 days of meal summaries to calculate streak
       const today = new Date(currentDate);
@@ -117,7 +112,7 @@ const Dashboard = () => {
       console.error('Error calculating streak:', error);
       return { currentStreak: 0, streakStartDate: new Date() };
     }
-  };
+  }, [user]);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -175,7 +170,14 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [date, user]);
+  }, [date, user, calculateStreak]);
+
+  useEffect(() => {
+    if (authUser) {
+      setUser(authUser);
+      fetchDashboardData();
+    }
+  }, [authUser, fetchDashboardData]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
