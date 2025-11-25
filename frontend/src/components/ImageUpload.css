@@ -1,0 +1,57 @@
+.image-upload {
+  text-align: center;
+}
+
+.upload-area {
+  border: 3px dashed var(--border-color);
+  border-radius: 15px;
+  padding: 60px 40px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: var(--bg-color);
+}
+
+.upload-area:hover,
+.upload-area.drag-active {
+  border-color: var(--primary-color);
+  background: rgba(76, 175, 80, 0.05);
+}
+
+.upload-area svg {
+  color: var(--primary-color);
+  margin-bottom: 20px;
+}
+
+.upload-area p {
+  font-size: 1.2rem;
+  color: var(--text-primary);
+  margin: 10px 0;
+}
+
+.upload-hint {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.upload-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.uploaded-image {
+  max-width: 100%;
+  max-height: 400px;
+  border-radius: 15px;
+  box-shadow: var(--shadow);
+}
+
+.preview-controls {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
