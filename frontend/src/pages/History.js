@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FaCalendarAlt, FaFileExport, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import api from '../services/api';
@@ -20,7 +20,7 @@ const History = () => {
 
   useEffect(() => {
     fetchMonthlyMeals();
-  }, [currentMonth, currentYear]);
+  }, [fetchMonthlyMeals]);
 
   const formatManualMeal = (meal) => ({
     ...meal,
@@ -39,7 +39,7 @@ const History = () => {
     }]
   });
 
-  const fetchMonthlyMeals = async () => {
+  const fetchMonthlyMeals = useCallback(async () => {
     try {
       setLoading(true);
       const [trackedResponse, manualResponse] = await Promise.all([
@@ -50,7 +50,7 @@ const History = () => {
       const trackedMeals = trackedResponse.data.meals || [];
       const manualMeals = manualResponse.data.manualMeals?.map(formatManualMeal) || [];
       const allMeals = [...trackedMeals, ...manualMeals];
-      
+
       // Filter meals for current month
       const startDate = new Date(currentYear, currentMonth, 1);
       const endDate = new Date(currentYear, currentMonth + 1, 0);
@@ -78,7 +78,7 @@ const History = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentMonth, currentYear]);
 
   const getDateMeals = (day) => {
     const date = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
@@ -92,7 +92,7 @@ const History = () => {
     const date = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
     const calories = dailyCalories[date] || 0;
     const goal = user?.dailyCalorieGoal || 2000;
-    
+
     if (calories === 0) return 'none';
     if (calories < goal * 0.7) return 'low';
     if (calories < goal) return 'good';
@@ -122,7 +122,7 @@ const History = () => {
   const exportData = () => {
     const csvContent = [
       ['Date', 'Meal Type', 'Food', 'Quantity (g)', 'Calories', 'Protein (g)', 'Carbs (g)', 'Fat (g)'],
-      ...meals.flatMap(meal => 
+      ...meals.flatMap(meal =>
         meal.foods.map(food => [
           new Date(meal.date).toLocaleDateString(),
           meal.mealType,

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { FaFire, FaQuoteLeft, FaQuoteRight, FaTrophy, FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
 import api from '../services/api';
@@ -50,7 +50,7 @@ const Dashboard = () => {
       setUser(authUser);
       fetchDashboardData();
     }
-  }, [date, authUser]);
+  }, [date, authUser, fetchDashboardData]);
 
   const calculateManualTotals = (manualList = []) => {
     return manualList.reduce(
@@ -119,7 +119,7 @@ const Dashboard = () => {
     }
   };
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
       const [summaryRes, mealsRes, manualRes] = await Promise.all([
@@ -175,7 +175,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [date, user]);
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
