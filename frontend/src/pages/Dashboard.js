@@ -98,7 +98,7 @@ const Dashboard = () => {
       setLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [date, calculateStreak]);
+  }, [date]);
 
   useEffect(() => {
     if (authUser) {
@@ -365,11 +365,6 @@ const Dashboard = () => {
               <img src={user.profilePicture} alt="Profile" className="profile-picture" />
             )}
           </div>
-          {streak > 0 && (
-            <div className="streak-badge">
-              <FaFire /> {streak} Day Streak!
-            </div>
-          )}
         </motion.header>
 
         {/* Manual Meal Input Form */}
@@ -659,24 +654,7 @@ const Dashboard = () => {
           </div>
         </motion.div>
 
-        {/* Achievements */}
-        {achievements.length > 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="achievements-section card"
-          >
-            <h2>
-              <FaTrophy /> Recent Achievements
-            </h2>
-            <div className="achievements-grid">
-              {achievements.slice(0, 3).map((achievement, idx) => (
-                <AchievementBadge key={idx} achievement={achievement} />
-              ))}
-            </div>
-          </motion.div>
-        )}
+
 
         {/* Motivational Quote */}
         <motion.div
