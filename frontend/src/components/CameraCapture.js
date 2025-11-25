@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 import './CameraCapture.css';
 
 const CameraCapture = ({ onAnalyze, loading }) => {
@@ -26,7 +26,7 @@ const CameraCapture = ({ onAnalyze, loading }) => {
     }
   };
 
-  const stopCamera = () => {
+  const stopCamera = useCallback(() => {
     if (stream) {
       stream.getTracks().forEach(track => track.stop());
       setStream(null);
@@ -34,7 +34,7 @@ const CameraCapture = ({ onAnalyze, loading }) => {
         videoRef.current.srcObject = null;
       }
     }
-  };
+  }, [stream]);
 
   const capture = () => {
     if (videoRef.current && canvasRef.current) {
@@ -44,7 +44,7 @@ const CameraCapture = ({ onAnalyze, loading }) => {
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
       ctx.drawImage(video, 0, 0);
-      
+
       canvas.toBlob((blob) => {
         setCapturedImage(blob);
         setIsCaptured(true);
@@ -68,7 +68,7 @@ const CameraCapture = ({ onAnalyze, loading }) => {
     return () => {
       stopCamera();
     };
-  }, []);
+  }, [stopCamera]);
 
   return (
     <div className="camera-capture card">
@@ -81,7 +81,7 @@ const CameraCapture = ({ onAnalyze, loading }) => {
             className="camera-video"
             style={{ display: stream ? 'block' : 'none' }}
           />
-          
+
           {!stream && (
             <div className="camera-placeholder">
               <p>Click "Start Camera" to begin</p>
@@ -139,4 +139,3 @@ const CameraCapture = ({ onAnalyze, loading }) => {
 };
 
 export default CameraCapture;
-
