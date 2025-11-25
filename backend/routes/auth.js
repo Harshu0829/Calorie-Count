@@ -41,9 +41,20 @@ router.post('/register', async (req, res) => {
             token,
             user: {
                 id: user._id,
+                _id: user._id,
                 name: user.name,
                 email: user.email,
-                dailyCalorieGoal: user.dailyCalorieGoal
+                age: user.age,
+                gender: user.gender,
+                height: user.height,
+                weight: user.weight,
+                activityLevel: user.activityLevel,
+                dailyCalorieGoal: user.dailyCalorieGoal,
+                dailyProteinGoal: user.dailyProteinGoal,
+                dailyCarbsGoal: user.dailyCarbsGoal,
+                dailyFatGoal: user.dailyFatGoal,
+                profilePicture: user.profilePicture,
+                currentStreak: user.currentStreak
             }
         });
     } catch (error) {
@@ -97,11 +108,21 @@ router.post('/login', async (req, res) => {
             token,
             user: {
                 id: user._id,
+                _id: user._id,
                 name: user.name,
                 email: user.email,
+                age: user.age,
+                gender: user.gender,
+                height: user.height,
+                weight: user.weight,
+                activityLevel: user.activityLevel,
                 dailyCalorieGoal: user.dailyCalorieGoal,
+                dailyProteinGoal: user.dailyProteinGoal,
+                dailyCarbsGoal: user.dailyCarbsGoal,
+                dailyFatGoal: user.dailyFatGoal,
+                profilePicture: user.profilePicture,
                 currentStreak: user.currentStreak,
-                profilePicture: user.profilePicture
+                lastLoggedDate: user.lastLoggedDate
             }
         });
     } catch (error) {

@@ -5,24 +5,33 @@
       "src": "frontend/package.json",
       "use": "@vercel/static-build",
       "config": {
-        "distDir": "frontend/build"
+        "distDir": "build"
       }
     },
     {
-      "src": "api/index.js",
-      "use": "@vercel/node"
+      "src": "backend/main.py",
+      "use": "@vercel/python"
     }
   ],
   "routes": [
     {
       "src": "/api/(.*)",
-      "dest": "api/index.js"
-    }
-  ],
-  "rewrites": [
+      "dest": "/backend/main.py"
+    },
     {
-      "source": "/(.*)",
-      "destination": "/index.html"
+      "src": "/(.*)",
+      "dest": "/frontend/$1",
+      "headers": {
+        "Cache-Control": "s-maxage=0"
+      }
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/frontend/index.html",
+      "check": true
     }
   ]
 }
