@@ -29,13 +29,6 @@ const userSchema = new mongoose.Schema({
     phoneNumber: {
         type: String
     },
-    currentStreak: {
-        type: Number,
-        default: 0
-    },
-    lastLoggedDate: {
-        type: Date
-    },
     age: {
         type: Number,
         min: 1,

@@ -34,19 +34,6 @@
   object-fit: cover;
 }
 
-.streak-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 16px;
-  background: rgba(255, 217, 61, 0.2);
-  border: 1px solid var(--warning-color);
-  border-radius: 20px;
-  color: var(--warning-color);
-  font-weight: 600;
-  font-size: 0.9rem;
-}
-
 .manual-meal-input {
   margin-bottom: 30px;
 }
@@ -419,30 +406,6 @@
   color: var(--text-muted);
   font-style: italic;
   padding: 12px;
-}
-
-.achievements-section {
-  margin-bottom: 20px;
-}
-
-.achievements-section h2 {
-  margin-bottom: 20px;
-  color: var(--text-primary);
-  font-size: 1.8rem;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.achievements-section h2 svg {
-  color: var(--warning-color);
-}
-
-.achievements-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 20px;
 }
 
 .motivational-quote-card {

@@ -1,4 +1,6 @@
 from fastapi import FastAPI, File, UploadFile, HTTPException, Depends, status
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from pydantic import BaseModel, EmailStr, Field
@@ -207,7 +209,9 @@ async def analyze_image_with_claude(image_bytes: bytes):
 
 # --- Routes ---
 
-@app.post("/token", response_model=Token)
+# --- Routes ---
+
+@app.post("/api/token", response_model=Token)
 async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends()):
     user = await db.users.find_one({"username": form_data.username})
     if not user or not verify_password(form_data.password, user["hashed_password"]):
@@ -222,7 +226,7 @@ async def login_for_access_token(form_data: OAuth2PasswordRequestForm = Depends(
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@app.post("/users", response_model=User)
+@app.post("/api/users", response_model=User)
 async def create_user(user: UserInDB):
     existing_user = await db.users.find_one({"username": user.username})
     if existing_user:
@@ -232,11 +236,11 @@ async def create_user(user: UserInDB):
     await db.users.insert_one(user.dict())
     return user
 
-@app.get("/users/me", response_model=User)
+@app.get("/api/users/me", response_model=User)
 async def read_users_me(current_user: User = Depends(get_current_user)):
     return current_user
 
-@app.put("/users/me", response_model=User)
+@app.put("/api/users/me", response_model=User)
 async def update_user_me(user_update: dict, current_user: User = Depends(get_current_user)):
     """Update current user profile."""
     # Filter allowed fields
@@ -316,9 +320,29 @@ async def analyze_image(
 
     return {"detected_foods": results, "totals": totals}
 
-@app.get("/health")
+@app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "db": "connected" if client else "disconnected"}
+
+# --- Static Files & SPA Fallback ---
+# Mount the static directory (CSS, JS, media)
+# Check if build directory exists to avoid errors during dev if not built
+if os.path.exists("../frontend/build"):
+    app.mount("/static", StaticFiles(directory="../frontend/build/static"), name="static")
+    # You might also want to mount other root-level files like manifest.json, favicon.ico if needed,
+    # or just rely on the catch-all if they are in the build root.
+    
+    # Catch-all route for SPA
+    @app.get("/{full_path:path}")
+    async def serve_spa(full_path: str):
+        # Check if the file exists in build directory (e.g. manifest.json, favicon.ico)
+        file_path = os.path.join("../frontend/build", full_path)
+        if os.path.exists(file_path) and os.path.isfile(file_path):
+            return FileResponse(file_path)
+        # Otherwise serve index.html
+        return FileResponse("../frontend/build/index.html")
+else:
+    print("Warning: ../frontend/build directory not found. Frontend will not be served.")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)

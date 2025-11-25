@@ -53,8 +53,7 @@ router.post('/register', async (req, res) => {
                 dailyProteinGoal: user.dailyProteinGoal,
                 dailyCarbsGoal: user.dailyCarbsGoal,
                 dailyFatGoal: user.dailyFatGoal,
-                profilePicture: user.profilePicture,
-                currentStreak: user.currentStreak
+                profilePicture: user.profilePicture
             }
         });
     } catch (error) {
@@ -86,24 +85,6 @@ router.post('/login', async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        // Update streak
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const lastLogged = user.lastLoggedDate ? new Date(user.lastLoggedDate) : null;
-        if (lastLogged) {
-            lastLogged.setHours(0, 0, 0, 0);
-            const daysDiff = Math.floor((today - lastLogged) / (1000 * 60 * 60 * 24));
-            if (daysDiff === 1) {
-                user.currentStreak = (user.currentStreak || 0) + 1;
-            } else if (daysDiff > 1) {
-                user.currentStreak = 1;
-            }
-        } else {
-            user.currentStreak = 1;
-        }
-        user.lastLoggedDate = new Date();
-        await user.save();
-
         res.json({
             token,
             user: {
@@ -120,9 +101,7 @@ router.post('/login', async (req, res) => {
                 dailyProteinGoal: user.dailyProteinGoal,
                 dailyCarbsGoal: user.dailyCarbsGoal,
                 dailyFatGoal: user.dailyFatGoal,
-                profilePicture: user.profilePicture,
-                currentStreak: user.currentStreak,
-                lastLoggedDate: user.lastLoggedDate
+                profilePicture: user.profilePicture
             }
         });
     } catch (error) {
@@ -150,9 +129,7 @@ router.get('/me', auth, async (req, res) => {
                 dailyFatGoal: user.dailyFatGoal,
                 profilePicture: user.profilePicture,
                 authProvider: user.authProvider,
-                phoneNumber: user.phoneNumber,
-                currentStreak: user.currentStreak,
-                lastLoggedDate: user.lastLoggedDate
+                phoneNumber: user.phoneNumber
             }
         });
     } catch (error) {
@@ -236,8 +213,7 @@ router.put('/profile', auth, async (req, res) => {
                 dailyFatGoal: user.dailyFatGoal,
                 profilePicture: user.profilePicture,
                 authProvider: user.authProvider,
-                phoneNumber: user.phoneNumber,
-                currentStreak: user.currentStreak
+                phoneNumber: user.phoneNumber
             }
         });
     } catch (error) {

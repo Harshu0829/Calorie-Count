@@ -19,8 +19,8 @@ mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
 })
-.then(() => console.log('MongoDB Connected'))
-.catch(err => console.error('MongoDB connection error:', err));
+    .then(() => console.log('MongoDB Connected'))
+    .catch(err => console.error('MongoDB connection error:', err));
 
 // Multer configuration for file uploads
 const storage = multer.memoryStorage();
@@ -31,7 +31,7 @@ const upload = multer({
         const allowedTypes = /jpeg|jpg|png|gif|webp/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
         const mimetype = allowedTypes.test(file.mimetype);
-        
+
         if (mimetype && extname) {
             return cb(null, true);
         } else {
@@ -55,9 +55,19 @@ app.use('/api/manual-meals', manualMealRoutes);
 app.use('/api/analyze', analyzeRoutes);
 
 // Health check
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
     res.json({ message: 'Calorie Tracker API', status: 'running' });
 });
+
+// Serve static assets in production/local dev
+if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'development') {
+    // Set static folder
+    app.use(express.static(path.join(__dirname, '../frontend/build')));
+
+    app.get('*', (req, res) => {
+        res.sendFile(path.resolve(__dirname, '../frontend', 'build', 'index.html'));
+    });
+}
 
 // Export app for serverless functions, or start server if running directly
 if (require.main === module) {
