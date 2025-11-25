@@ -112,7 +112,8 @@ const Dashboard = () => {
       console.error('Error calculating streak:', error);
       return { currentStreak: 0, streakStartDate: new Date() };
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -170,7 +171,8 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  }, [date, user, calculateStreak]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [date, calculateStreak]);
 
   useEffect(() => {
     if (authUser) {
