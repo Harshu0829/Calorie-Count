@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { FaFire, FaQuoteLeft, FaQuoteRight, FaTrophy, FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
+import { FaQuoteLeft, FaQuoteRight, FaPlus, FaEdit, FaTrash, FaSave, FaTimes } from 'react-icons/fa';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import CircularProgress from '../components/CircularProgress';
-import AchievementBadge from '../components/AchievementBadge';
+
 import BottomNavigation from '../components/BottomNavigation';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import './Dashboard.css';
@@ -15,8 +15,7 @@ const Dashboard = () => {
   const [manualMeals, setManualMeals] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [streak, setStreak] = useState(0);
-  const [achievements, setAchievements] = useState([]);
+
   const [date] = useState(new Date().toISOString().split('T')[0]);
   const [editingMeal, setEditingMeal] = useState(null);
   const getMealTypeByTime = () => {
@@ -59,12 +58,7 @@ const Dashboard = () => {
     );
   };
 
-  // Simplified streak calculation - TODO: Move to backend
-  const calculateStreak = useCallback(async () => {
-    // Temporarily disabled to fix performance issues
-    // This was making 60 API calls on every page load
-    return { currentStreak: 0, streakStartDate: new Date() };
-  }, []);
+
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -97,10 +91,7 @@ const Dashboard = () => {
 
       setMeals(mealsRes.data.meals || []);
 
-      // Simplified achievements - TODO: Implement backend calculation
-      // Temporarily disabled streak achievements to fix performance
-      setStreak(0);
-      setAchievements([]);
+
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
