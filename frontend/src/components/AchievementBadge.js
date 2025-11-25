@@ -27,6 +27,19 @@ const AchievementBadge = ({ achievement }) => {
     >
       <div className="achievement-icon">{getIcon(achievement.type)}</div>
       <div className="achievement-name">{achievement.name}</div>
+      {achievement.progress !== undefined && achievement.maxProgress && (
+        <div className="achievement-progress">
+          <div className="progress-bar-container">
+            <div
+              className="progress-bar-fill"
+              style={{ width: `${Math.min(100, (achievement.progress / achievement.maxProgress) * 100)}%` }}
+            />
+          </div>
+          <div className="progress-text">
+            {achievement.progress}/{achievement.maxProgress} days
+          </div>
+        </div>
+      )}
       <div className="achievement-date">
         {new Date(achievement.dateEarned).toLocaleDateString()}
       </div>
@@ -35,4 +48,3 @@ const AchievementBadge = ({ achievement }) => {
 };
 
 export default AchievementBadge;
-

@@ -64,6 +64,61 @@ const Dashboard = () => {
     );
   };
 
+  const calculateStreak = async (currentDate) => {
+    try {
+      // Fetch last 30 days of meal summaries to calculate streak
+      const today = new Date(currentDate);
+      const summaries = [];
+
+      for (let i = 0; i < 30; i++) {
+        const checkDate = new Date(today);
+        checkDate.setDate(today.getDate() - i);
+        const dateStr = checkDate.toISOString().split('T')[0];
+
+        try {
+          const [summaryRes, manualRes] = await Promise.all([
+            api.get(`/meals/summary?date=${dateStr}`).catch(() => ({ data: { summary: null } })),
+            api.get(`/manual-meals?date=${dateStr}`).catch(() => ({ data: { manualMeals: [] } }))
+          ]);
+
+          const manualData = manualRes.data.manualMeals || [];
+          const manualTotals = calculateManualTotals(manualData);
+          const summaryData = summaryRes.data.summary || { totalCalories: 0 };
+          const totalCalories = (summaryData.totalCalories || 0) + manualTotals.calories;
+
+          summaries.push({
+            date: dateStr,
+            totalCalories,
+            metGoal: totalCalories >= (user?.dailyCalorieGoal || 2000)
+          });
+        } catch (error) {
+          summaries.push({ date: dateStr, totalCalories: 0, metGoal: false });
+        }
+      }
+
+      // Calculate current streak (consecutive days from today backwards)
+      let currentStreak = 0;
+      let streakStartDate = null;
+
+      for (let i = 0; i < summaries.length; i++) {
+        if (summaries[i].metGoal) {
+          currentStreak++;
+          streakStartDate = summaries[i].date;
+        } else {
+          break;
+        }
+      }
+
+      return {
+        currentStreak,
+        streakStartDate: streakStartDate ? new Date(streakStartDate) : new Date()
+      };
+    } catch (error) {
+      console.error('Error calculating streak:', error);
+      return { currentStreak: 0, streakStartDate: new Date() };
+    }
+  };
+
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
@@ -95,13 +150,26 @@ const Dashboard = () => {
 
       setMeals(mealsRes.data.meals || []);
 
-      // TODO: Fetch streak and achievements from backend
-      // For now, use placeholder values
-      setStreak(7); // Placeholder
-      setAchievements([
-        { type: 'streak', name: '7 Day Streak', dateEarned: new Date() },
-        { type: 'goal', name: 'Hit Protein Goal', dateEarned: new Date() }
-      ]);
+      // Calculate streak and achievements dynamically
+      const streakData = await calculateStreak(date);
+      setStreak(streakData.currentStreak);
+
+      // Generate achievements based on actual progress
+      const earnedAchievements = [];
+
+      // 7-day streak achievement
+      if (streakData.currentStreak >= 7) {
+        earnedAchievements.push({
+          type: 'streak',
+          name: '7 Day Streak',
+          dateEarned: streakData.streakStartDate,
+          progress: streakData.currentStreak,
+          maxProgress: 7,
+          description: 'Completed daily goals for 7 days in a row!'
+        });
+      }
+
+      setAchievements(earnedAchievements);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
     } finally {
