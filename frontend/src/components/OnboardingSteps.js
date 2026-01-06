@@ -1,6 +1,6 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import {
-    FaUser, FaRulerVertical, FaWeight, FaBirthdayCake, FaVenusMars,
+    FaRulerVertical, FaWeight, FaBirthdayCake, FaVenusMars,
     FaBed, FaWalking, FaRunning, FaDumbbell, FaFire,
     FaArrowDown, FaEquals, FaArrowUp
 } from 'react-icons/fa';

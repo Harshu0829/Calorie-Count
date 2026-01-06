@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React from 'react';
+import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaCamera, FaUpload, FaChartLine, FaRunning } from 'react-icons/fa';
+import { FaCamera, FaChartLine, FaRunning } from 'react-icons/fa';
 import { useAuth } from '../context/AuthContext';
 import './Home.css';
 import fitnessHero from '../assets/fitness_hero.png';
