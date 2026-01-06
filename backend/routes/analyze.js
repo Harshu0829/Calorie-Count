@@ -1,116 +1,231 @@
 const express = require('express');
 const multer = require('multer');
-const sharp = require('sharp');
-const { detectFoodInImage, estimateWeight, calculateCalories } = require('../utils/foodDatabase');
+const OpenAI = require('openai');
+const FoodCache = require('../models/FoodCache');
+const auth = require('../middleware/auth');
 
 const router = express.Router();
+
+// Initialize OpenAI only if API key is available
+let openai = null;
+if (process.env.OPENAI_API_KEY) {
+    openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+    });
+} else {
+    console.warn('⚠️  OPENAI_API_KEY not found in environment variables');
+}
 
 const storage = multer.memoryStorage();
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit for OpenAI
     fileFilter: (req, file, cb) => {
-        const allowedTypes = /jpeg|jpg|png|gif|webp/;
+        const allowedTypes = /jpeg|jpg|png|webp/;
         const mimetype = allowedTypes.test(file.mimetype);
 
         if (mimetype) {
             return cb(null, true);
         } else {
-            cb(new Error('Only image files are allowed!'));
+            cb(new Error('Only JPEG, PNG, and WebP images are allowed!'));
         }
     }
 });
 
-// Analyze uploaded image
-router.post('/image', upload.single('file'), async (req, res) => {
+// Helper: Convert buffer to base64 data URL
+function bufferToDataUrl(file) {
+    const base64 = file.buffer.toString('base64');
+    return `data:${file.mimetype};base64,${base64}`;
+}
+
+// Helper: Parse OpenAI response to structured nutrition data
+function parseNutritionResponse(text) {
+    try {
+        // Try to extract JSON if present
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+            return JSON.parse(jsonMatch[0]);
+        }
+
+        // Fallback: Parse text format
+        const caloriesMatch = text.match(/calories?:?\s*(\d+)/i);
+        const proteinMatch = text.match(/protein:?\s*(\d+)/i);
+        const carbsMatch = text.match(/carb(?:ohydrate)?s?:?\s*(\d+)/i);
+        const fatMatch = text.match(/fat:?\s*(\d+)/i);
+        const foodNameMatch = text.match(/food:?\s*([^\n]+)/i) || text.match(/identified:?\s*([^\n]+)/i);
+
+        return {
+            foodName: foodNameMatch ? foodNameMatch[1].trim() : 'Unknown Food',
+            calories: parseInt(caloriesMatch?.[1] || 0),
+            protein: parseInt(proteinMatch?.[1] || 0),
+            carbs: parseInt(carbsMatch?.[1] || 0),
+            fat: parseInt(fatMatch?.[1] || 0),
+            confidence: 0.8 // Default confidence for text parsing
+        };
+    } catch (err) {
+        console.error('Error parsing nutrition response:', err);
+        return null;
+    }
+}
+
+// Analyze image endpoint with caching
+router.post('/image', auth, upload.single('file'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'No image file provided' });
         }
 
-        // Process image with sharp
-        const imageBuffer = req.file.buffer;
+        console.log(`Processing image: ${req.file.originalname} (${req.file.size} bytes)`);
 
-        // Validate image
-        try {
-            const metadata = await sharp(imageBuffer).metadata();
-            if (!metadata.width || !metadata.height) {
-                return res.status(400).json({ message: 'Invalid image format' });
-            }
-        } catch (error) {
-            return res.status(400).json({ message: 'Invalid image format' });
-        }
-
-        // Detect foods in image
-        const detectedFoods = detectFoodInImage(imageBuffer);
-
-        // Calculate total base weight to determine scaling factor
-        let totalBaseWeight = 0;
-        for (const foodInfo of detectedFoods) {
-            totalBaseWeight += estimateWeight(foodInfo.name);
-        }
-
-        // Determine scaling factor if user provided weight
-        let scalingFactor = 1.0;
-        if (req.body.weight && !isNaN(req.body.weight) && totalBaseWeight > 0) {
-            scalingFactor = parseFloat(req.body.weight) / totalBaseWeight;
-        }
-
-        // Calculate calories for each detected food
-        const results = [];
-        let totalCalories = 0;
-        let totalProtein = 0;
-        let totalCarbs = 0;
-        let totalFat = 0;
-        let totalVitaminA = 0;
-        let totalVitaminC = 0;
-        let totalCalcium = 0;
-        let totalIron = 0;
-
-        for (const foodInfo of detectedFoods) {
-            const foodName = foodInfo.name;
-            const baseWeight = estimateWeight(foodName);
-            const weight = baseWeight * scalingFactor;
-            const calorieInfo = calculateCalories(foodName, weight);
-
-            results.push({
-                ...calorieInfo,
-                confidence: foodInfo.confidence
+        // Check if OpenAI is initialized
+        if (!openai) {
+            return res.status(500).json({
+                message: 'OpenAI API is not configured. Please add OPENAI_API_KEY to environment variables.'
             });
+        }
 
-            totalCalories += calorieInfo.calories;
-            totalProtein += calorieInfo.protein;
-            totalCarbs += calorieInfo.carbs;
-            totalFat += calorieInfo.fat;
+        // Convert image to base64
+        const imageDataUrl = bufferToDataUrl(req.file);
 
-            if (calorieInfo.micronutrients) {
-                totalVitaminA += calorieInfo.micronutrients.vitaminA;
-                totalVitaminC += calorieInfo.micronutrients.vitaminC;
-                totalCalcium += calorieInfo.micronutrients.calcium;
-                totalIron += calorieInfo.micronutrients.iron;
+        // Call OpenAI Vision API
+        const response = await openai.chat.completions.create({
+            model: 'gpt-4o',
+            messages: [
+                {
+                    role: 'system',
+                    content: `You are a nutrition analysis AI. Analyze food images and return nutritional information in this exact JSON format:
+{
+  "foodName": "name of the food",
+  "calories": number,
+  "protein": number (grams),
+  "carbs": number (grams),
+  "fat": number (grams),
+  "servingSize": number (grams),
+  "confidence": number (0-1)
+}
+Be accurate and only analyze what you can clearly identify.`
+                },
+                {
+                    role: 'user',
+                    content: [
+                        {
+                            type: 'text',
+                            text: 'Analyze this food image and provide complete nutritional breakdown. Return only the JSON object.'
+                        },
+                        {
+                            type: 'image_url',
+                            image_url: {
+                                url: imageDataUrl
+                            }
+                        }
+                    ]
+                }
+            ],
+            max_tokens: 500,
+            temperature: 0.7
+        });
+
+        const aiResponse = response.choices[0].message.content;
+        console.log('OpenAI Response:', aiResponse);
+
+        // Parse the response
+        const nutritionData = parseNutritionResponse(aiResponse);
+
+        if (!nutritionData) {
+            return res.status(500).json({ message: 'Could not parse nutrition data from image' });
+        }
+
+        // Check/Update cache for frequent foods
+        const minFrequency = parseInt(process.env.CACHE_MIN_FREQUENCY) || 3;
+        const minConfidence = parseFloat(process.env.CACHE_MIN_CONFIDENCE) || 0.7;
+
+        if (nutritionData.confidence >= minConfidence) {
+            try {
+                const normalizedName = nutritionData.foodName.toLowerCase().trim();
+                let cached = await FoodCache.findOne({ normalizedName });
+
+                if (cached) {
+                    // Update existing cache
+                    await cached.incrementCount();
+                    console.log(`Cache updated for "${nutritionData.foodName}" (count: ${cached.analysisCount + 1})`);
+                } else {
+                    // Create new cache entry (will be promoted after minFrequency analyses)
+                    cached = new FoodCache({
+                        foodName: normalizedName,
+                        normalizedName: normalizedName,
+                        nutrition: {
+                            calories: nutritionData.calories,
+                            protein: nutritionData.protein,
+                            carbs: nutritionData.carbs,
+                            fat: nutritionData.fat,
+                            servingSize: nutritionData.servingSize || 100
+                        },
+                        averageConfidence: nutritionData.confidence,
+                        expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000) // 30 days
+                    });
+                    await cached.save();
+                    console.log(`New cache entry created for "${nutritionData.foodName}"`);
+                }
+            } catch (cacheErr) {
+                console.error('Cache error (non-critical):', cacheErr.message);
+                // Continue even if caching fails
             }
         }
 
+        // Return response
         res.json({
-            detected_foods: results,
+            detected_foods: [{
+                name: nutritionData.foodName,
+                calories: nutritionData.calories,
+                protein: nutritionData.protein,
+                carbs: nutritionData.carbs,
+                fat: nutritionData.fat,
+                weight: nutritionData.servingSize || 100,
+                confidence: nutritionData.confidence
+            }],
             totals: {
-                calories: Math.round(totalCalories * 10) / 10,
-                protein: Math.round(totalProtein * 10) / 10,
-                carbs: Math.round(totalCarbs * 10) / 10,
-                fat: Math.round(totalFat * 10) / 10,
-                micronutrients: {
-                    vitaminA: Math.round(totalVitaminA * 10) / 10,
-                    vitaminC: Math.round(totalVitaminC * 10) / 10,
-                    calcium: Math.round(totalCalcium * 10) / 10,
-                    iron: Math.round(totalIron * 10) / 10
-                }
+                calories: nutritionData.calories,
+                protein: nutritionData.protein,
+                carbs: nutritionData.carbs,
+                fat: nutritionData.fat
+            },
+            metadata: {
+                model: 'gpt-4o',
+                tokensUsed: response.usage?.total_tokens || 0,
+                cached: false // Could enhance this to check if similar food was in cache
             }
         });
+
     } catch (error) {
         console.error('Error analyzing image:', error);
-        res.status(500).json({ message: error.message || 'Error analyzing image' });
+
+        if (error.status) {
+            return res.status(error.status).json({
+                message: 'OpenAI API error',
+                details: error.message
+            });
+        }
+
+        res.status(500).json({
+            message: error.message || 'Error analyzing image'
+        });
+    }
+});
+
+// Get cached foods (for debugging/admin)
+router.get('/cache', auth, async (req, res) => {
+    try {
+        const cachedFoods = await FoodCache.find()
+            .sort({ analysisCount: -1 })
+            .limit(50);
+
+        res.json({
+            count: cachedFoods.length,
+            foods: cachedFoods
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
     }
 });
 
 module.exports = router;
-

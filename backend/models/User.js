@@ -90,7 +90,23 @@ const userSchema = new mongoose.Schema({
             type: Date,
             default: Date.now
         }
-    }]
+    }],
+    // Password reset fields
+    resetPasswordToken: String,
+    resetPasswordExpires: Date,
+    // Onboarding fields
+    hasCompletedOnboarding: {
+        type: Boolean,
+        default: false
+    },
+    targetWeight: {
+        type: Number,
+        min: 0
+    },
+    goalType: {
+        type: String,
+        enum: ['lose', 'maintain', 'gain']
+    }
 }, {
     timestamps: true
 });
@@ -107,6 +123,17 @@ userSchema.pre('save', async function (next) {
 // Compare password method
 userSchema.methods.comparePassword = async function (candidatePassword) {
     return await bcrypt.compare(candidatePassword, this.password);
+};
+
+// Generate password reset token
+userSchema.methods.generatePasswordResetToken = function () {
+    const crypto = require('crypto');
+    const resetToken = crypto.randomBytes(32).toString('hex');
+
+    this.resetPasswordToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+    this.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+
+    return resetToken;
 };
 
 module.exports = mongoose.model('User', userSchema);

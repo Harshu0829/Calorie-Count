@@ -1,6 +1,6 @@
 const express = require('express');
 const ManualMeal = require('../models/ManualMeal');
-const Food = require('../models/Food');
+const { Food } = require('../models/Food');
 const { calculateCalories } = require('../utils/foodDatabase');
 const auth = require('../middleware/auth');
 

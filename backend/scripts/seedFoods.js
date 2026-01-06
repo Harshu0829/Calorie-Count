@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Food = require('../models/Food');
+const { Food } = require('../models/Food');
 const { FOOD_DATABASE } = require('../utils/foodDatabase');
 require('dotenv').config();
 
@@ -9,15 +9,15 @@ async function seedFoods() {
     try {
         await mongoose.connect(MONGODB_URI);
         console.log('Connected to MongoDB');
-        
+
         // Clear existing foods
         await Food.deleteMany({});
         console.log('Cleared existing foods');
-        
+
         // Insert foods from database
         const foods = Object.entries(FOOD_DATABASE).map(([name, data]) => ({
             name,
-            displayName: name.split('_').map(word => 
+            displayName: name.split('_').map(word =>
                 word.charAt(0).toUpperCase() + word.slice(1)
             ).join(' '),
             calories: data.calories,
@@ -27,10 +27,10 @@ async function seedFoods() {
             category: data.category || 'other',
             servingSize: 100
         }));
-        
+
         await Food.insertMany(foods);
         console.log(`Seeded ${foods.length} foods`);
-        
+
         mongoose.connection.close();
         console.log('Database connection closed');
     } catch (error) {

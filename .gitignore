@@ -6,3 +6,12 @@ npm-debug.log
 build/
 dist/
 
+# ML Model files and training data
+backend/models/*.pth
+backend/models/*.onnx
+backend/data/
+backend/logs/
+__pycache__/
+*.pyc
+.cache/
+

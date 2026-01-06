@@ -600,3 +600,49 @@
     justify-content: flex-end;
   }
 }
+
+/* Weekly Consumption Graph Styles */
+.weekly-consumption {
+  margin-bottom: 20px;
+}
+
+.card-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 25px;
+}
+
+.weekly-consumption h2 {
+  color: var(--text-primary);
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.goal-indicator {
+  padding: 6px 12px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  border-radius: 8px;
+  color: var(--electric-blue);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.weekly-chart-container {
+  margin: 10px -10px 0 -20px;
+  /* Offset to align with card padding */
+}
+
+@media (max-width: 640px) {
+  .weekly-consumption h2 {
+    font-size: 1.5rem;
+  }
+
+  .card-header-flex {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+}

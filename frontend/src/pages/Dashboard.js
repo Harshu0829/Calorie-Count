@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import CircularProgress from '../components/CircularProgress';
 
 import BottomNavigation from '../components/BottomNavigation';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import './Dashboard.css';
 
 const Dashboard = () => {
@@ -15,6 +15,7 @@ const Dashboard = () => {
   const [manualMeals, setManualMeals] = useState([]);
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [weeklyStats, setWeeklyStats] = useState([]);
 
   const [date] = useState(new Date().toISOString().split('T')[0]);
   const [editingMeal, setEditingMeal] = useState(null);
@@ -63,11 +64,14 @@ const Dashboard = () => {
   const fetchDashboardData = useCallback(async () => {
     try {
       setLoading(true);
-      const [summaryRes, mealsRes, manualRes] = await Promise.all([
+      const [summaryRes, mealsRes, manualRes, weeklyRes] = await Promise.all([
         api.get(`/meals/summary?date=${date}`).catch(() => ({ data: { summary: null } })),
         api.get(`/meals?date=${date}`).catch(() => ({ data: { meals: [] } })),
-        api.get(`/manual-meals?date=${date}`).catch(() => ({ data: { manualMeals: [] } }))
+        api.get(`/manual-meals?date=${date}`).catch(() => ({ data: { manualMeals: [] } })),
+        api.get('/meals/weekly-stats').catch(() => ({ data: { weeklyStats: [] } }))
       ]);
+
+      setWeeklyStats(weeklyRes.data.weeklyStats || []);
 
       const manualData = manualRes.data.manualMeals || [];
       setManualMeals(manualData);
@@ -132,6 +136,16 @@ const Dashboard = () => {
       { name: 'Carbs', consumed: summary.totalCarbs || 0, goal: user.dailyCarbsGoal || 250 },
       { name: 'Fat', consumed: summary.totalFat || 0, goal: user.dailyFatGoal || 65 }
     ];
+  };
+
+  const formatWeeklyData = () => {
+    return weeklyStats.map(stat => {
+      const dateObj = new Date(stat.date);
+      return {
+        ...stat,
+        displayDate: dateObj.toLocaleDateString('en-US', { weekday: 'short' })
+      };
+    });
   };
 
   const mealTypes = ['breakfast', 'lunch', 'dinner', 'snack'];
@@ -532,6 +546,77 @@ const Dashboard = () => {
                 </div>
               </div>
             </div>
+          </div>
+        </motion.div>
+
+        {/* Weekly Consumption Graph */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="weekly-consumption card"
+        >
+          <div className="card-header-flex">
+            <h2>Weekly Consumption</h2>
+            <div className="goal-indicator">
+              Goal: {user?.dailyCalorieGoal || 2000} kcal
+            </div>
+          </div>
+          <div className="weekly-chart-container">
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={formatWeeklyData()}>
+                <defs>
+                  <linearGradient id="colorCalories" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--electric-blue)" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="var(--electric-blue)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
+                <XAxis
+                  dataKey="displayDate"
+                  stroke="var(--text-secondary)"
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  stroke="var(--text-secondary)"
+                  axisLine={false}
+                  tickLine={false}
+                  tickFormatter={(value) => `${value}`}
+                />
+                <Tooltip
+                  cursor={{ stroke: 'var(--electric-blue)', strokeWidth: 2 }}
+                  contentStyle={{
+                    backgroundColor: 'var(--card-bg)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '12px',
+                    boxShadow: '0 12px 32px rgba(0, 0, 0, 0.35)',
+                    color: 'var(--text-primary)'
+                  }}
+                  itemStyle={{ color: 'var(--electric-blue)' }}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="calories"
+                  stroke="var(--electric-blue)"
+                  strokeWidth={3}
+                  fillOpacity={1}
+                  fill="url(#colorCalories)"
+                  animationDuration={1500}
+                />
+                {/* Reference line for daily goal */}
+                {user?.dailyCalorieGoal && (
+                  <Area
+                    type="monotone"
+                    dataKey={() => user.dailyCalorieGoal}
+                    stroke="rgba(255, 255, 255, 0.1)"
+                    strokeDasharray="5 5"
+                    fill="none"
+                    isAnimationActive={false}
+                  />
+                )}
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </motion.div>
 

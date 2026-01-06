@@ -26,13 +26,13 @@ const Login = () => {
     setLoading(true);
 
     const result = await login(formData.email, formData.password);
-    
+
     if (result.success) {
       navigate('/dashboard');
     } else {
       setError(result.message);
     }
-    
+
     setLoading(false);
   };
 
@@ -73,6 +73,12 @@ const Login = () => {
               />
             </div>
 
+            <div className="auth-footer" style={{ marginBottom: '10px', marginTop: '5px', paddingTop: '0', borderTop: 'none' }}>
+              <Link to="/forgot-password" className="auth-link" style={{ fontSize: '0.9rem' }}>
+                Forgot your password?
+              </Link>
+            </div>
+
             <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
               {loading ? 'Logging in...' : 'Login'}
             </button>
@@ -88,4 +94,3 @@ const Login = () => {
 };
 
 export default Login;
-

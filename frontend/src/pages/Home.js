@@ -2,96 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FaCamera, FaUpload, FaChartLine, FaRunning } from 'react-icons/fa';
-import CameraCapture from '../components/CameraCapture';
-import ImageUpload from '../components/ImageUpload';
-import Results from '../components/Results';
-import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import './Home.css';
 import fitnessHero from '../assets/fitness_hero.png';
 
 const Home = () => {
-  const [activeTab, setActiveTab] = useState('hero');
-  const [results, setResults] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [weight, setWeight] = useState('');
-  const [tempImage, setTempImage] = useState(null);
   const { user } = useAuth();
-  const navigate = useNavigate();
-
-  const handleAnalyze = (imageFile) => {
-    setTempImage(imageFile);
-  };
-
-  const submitAnalysis = async () => {
-    if (!tempImage || !weight) return;
-
-    setLoading(true);
-    setError('');
-    setResults(null);
-
-    try {
-      const formData = new FormData();
-      formData.append('file', tempImage);
-      formData.append('weight', weight);
-
-      const response = await api.post('/analyze/image', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        }
-      });
-
-      setResults(response.data);
-      setActiveTab('results');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error analyzing image. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSaveMeal = async () => {
-    if (!user) {
-      navigate('/login');
-      return;
-    }
-
-    if (!results) return;
-
-    try {
-      const mealData = {
-        mealType: 'snack',
-        foods: results.detected_foods.map(food => ({
-          foodName: food.food,
-          quantity: food.weight_grams,
-          calories: food.calories,
-          protein: food.protein,
-          carbs: food.carbs,
-          fat: food.fat,
-          confidence: food.confidence,
-          micronutrients: food.micronutrients
-        }))
-      };
-
-      await api.post('/meals', mealData);
-      alert('Meal saved successfully! 🎉');
-      setResults(null);
-      setActiveTab('hero');
-      navigate('/dashboard');
-    } catch (err) {
-      setError(err.response?.data?.message || 'Error saving meal');
-    }
-  };
-
-  const motivationalQuotes = [
-    "Every meal is a step toward your goal! 💪",
-    "You're stronger than your cravings! 🔥",
-    "Small steps lead to big results! ⭐",
-    "Your future self will thank you! 🌟"
-  ];
-
-  const randomQuote = motivationalQuotes[Math.floor(Math.random() * motivationalQuotes.length)];
 
   // Guest View
   if (!user) {
@@ -160,152 +76,64 @@ const Home = () => {
     );
   }
 
-  // Authenticated User View
+  // Authenticated User View - Coming Soon
   return (
     <div className="home user-home">
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
+        transition={{ duration: 1 }}
         className="user-home-section"
       >
-        <div className="welcome-message">
-          <h2>Track Your Meal</h2>
-          <p className="motivational-quote" style={{ fontWeight: 'bold', fontSize: '1.2rem' }}>{randomQuote}</p>
-        </div>
-
-        {!results && (
-          <>
-            <div className="upload-camera-container">
-              <div className="button-row">
-                <button
-                  onClick={() => {
-                    setActiveTab('upload');
-                    setTempImage(null);
-                    setResults(null);
-                  }}
-                  className={`upload-camera-btn ${activeTab === 'upload' ? 'active' : ''}`}
-                >
-                  <FaUpload className="btn-icon" />
-                  Upload Image
-                </button>
-                <button
-                  onClick={() => {
-                    setActiveTab('camera');
-                    setTempImage(null);
-                    setResults(null);
-                  }}
-                  className={`upload-camera-btn ${activeTab === 'camera' ? 'active' : ''}`}
-                >
-                  <FaCamera className="btn-icon" />
-                  Start Camera
-                </button>
-              </div>
-
-              <div className="upload-camera-area">
-                {!tempImage && (
-                  <>
-                    {activeTab === 'camera' && (
-                      <CameraCapture onAnalyze={handleAnalyze} loading={loading} />
-                    )}
-
-                    {activeTab === 'upload' && (
-                      <ImageUpload onAnalyze={handleAnalyze} loading={loading} />
-                    )}
-
-                    {activeTab === 'hero' && (
-                      <div className="empty-state">
-                        <FaCamera className="empty-icon" />
-                        <p>Click "Start Camera" or upload an image to begin</p>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {tempImage && (
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="preview-area"
-                  >
-                    <img
-                      src={URL.createObjectURL(tempImage)}
-                      alt="Food preview"
-                      className="preview-image"
-                    />
-                  </motion.div>
-                )}
-              </div>
-            </div>
-
-            {tempImage && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="weight-analysis-section"
-              >
-                <div className="weight-input-section">
-                  <label>Total Weight (grams)</label>
-                  <div className="input-group">
-                    <input
-                      type="number"
-                      value={weight}
-                      onChange={(e) => setWeight(e.target.value)}
-                      placeholder="e.g. 500"
-                      autoFocus
-                    />
-                    <span>g</span>
-                  </div>
-                </div>
-
-                {error && <div className="error-message">{error}</div>}
-
-                <div className="analysis-actions">
-                  <button
-                    onClick={() => {
-                      setTempImage(null);
-                      setWeight('');
-                    }}
-                    className="btn btn-secondary"
-                  >
-                    Retake / Cancel
-                  </button>
-                  <button
-                    onClick={submitAnalysis}
-                    className="btn btn-primary"
-                    disabled={!weight || loading}
-                  >
-                    {loading ? 'Analyzing...' : 'Analyze Meal'}
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </>
-        )}
-
-        {results && (
+        <div className="coming-soon-container">
+          <div className="coming-soon-glow"></div>
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="results-section"
+            animate={{
+              scale: [1, 1.1, 1],
+              rotateY: [0, 180, 360],
+              y: [0, -20, 0]
+            }}
+            transition={{
+              duration: 8,
+              repeat: Infinity,
+              ease: "linear"
+            }}
+            className="coming-soon-icon"
           >
-            <div className="results-header">
-              <h2>Analyzed! ✨</h2>
-              <p className="results-quote">"{randomQuote}"</p>
-            </div>
-            <Results results={results} onSaveMeal={handleSaveMeal} isAuthenticated={!!user} />
-            <button
-              onClick={() => {
-                setResults(null);
-                setTempImage(null);
-                setWeight('');
-                setActiveTab('hero');
-              }}
-              className="btn btn-secondary mt-4"
-            >
-              Analyze Another Meal
-            </button>
+            <FaRunning />
           </motion.div>
-        )}
+
+          <motion.h2
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.3 }}
+            className="coming-soon-title"
+          >
+            Evolution <br />
+            <span className="gradient-text">In Progress</span>
+          </motion.h2>
+
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.6 }}
+            className="coming-soon-subtitle"
+          >
+            The next generation of AI-driven nutrition tracking is almost here.
+            We're building the future of fitness, one byte at a time.
+          </motion.p>
+
+          <motion.div
+            initial={{ y: 20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.9 }}
+            className="mt-12"
+          >
+            <Link to="/dashboard" className="btn btn-futuristic">
+              Enter Dashboard
+            </Link>
+          </motion.div>
+        </div>
       </motion.div>
     </div>
   );

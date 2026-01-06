@@ -1,7 +1,9 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
+const { sendPasswordResetEmail } = require('../utils/emailService');
 
 const router = express.Router();
 
@@ -53,7 +55,13 @@ router.post('/register', async (req, res) => {
                 dailyProteinGoal: user.dailyProteinGoal,
                 dailyCarbsGoal: user.dailyCarbsGoal,
                 dailyFatGoal: user.dailyFatGoal,
-                profilePicture: user.profilePicture
+                profilePicture: user.profilePicture,
+                weightHistory: user.weightHistory || [],
+                heightHistory: user.heightHistory || [],
+                goalHistory: user.goalHistory || [],
+                hasCompletedOnboarding: user.hasCompletedOnboarding,
+                targetWeight: user.targetWeight,
+                goalType: user.goalType
             }
         });
     } catch (error) {
@@ -101,7 +109,13 @@ router.post('/login', async (req, res) => {
                 dailyProteinGoal: user.dailyProteinGoal,
                 dailyCarbsGoal: user.dailyCarbsGoal,
                 dailyFatGoal: user.dailyFatGoal,
-                profilePicture: user.profilePicture
+                profilePicture: user.profilePicture,
+                weightHistory: user.weightHistory || [],
+                heightHistory: user.heightHistory || [],
+                goalHistory: user.goalHistory || [],
+                hasCompletedOnboarding: user.hasCompletedOnboarding,
+                targetWeight: user.targetWeight,
+                goalType: user.goalType
             }
         });
     } catch (error) {
@@ -129,7 +143,13 @@ router.get('/me', auth, async (req, res) => {
                 dailyFatGoal: user.dailyFatGoal,
                 profilePicture: user.profilePicture,
                 authProvider: user.authProvider,
-                phoneNumber: user.phoneNumber
+                phoneNumber: user.phoneNumber,
+                weightHistory: user.weightHistory,
+                heightHistory: user.heightHistory,
+                goalHistory: user.goalHistory,
+                hasCompletedOnboarding: user.hasCompletedOnboarding,
+                targetWeight: user.targetWeight,
+                goalType: user.goalType
             }
         });
     } catch (error) {
@@ -213,10 +233,198 @@ router.put('/profile', auth, async (req, res) => {
                 dailyFatGoal: user.dailyFatGoal,
                 profilePicture: user.profilePicture,
                 authProvider: user.authProvider,
-                phoneNumber: user.phoneNumber
+                phoneNumber: user.phoneNumber,
+                weightHistory: user.weightHistory,
+                heightHistory: user.heightHistory,
+                goalHistory: user.goalHistory
             }
         });
     } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Complete Onboarding
+router.post('/onboarding', auth, async (req, res) => {
+    try {
+        const updates = req.body;
+        // req.user is already populated by auth middleware
+        const user = req.user;
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Update fields
+        const allowedUpdates = [
+            'age', 'gender', 'height', 'weight', 'activityLevel',
+            'dailyCalorieGoal', 'dailyProteinGoal', 'dailyCarbsGoal', 'dailyFatGoal',
+            'goalType', 'targetWeight', 'hasCompletedOnboarding'
+        ];
+
+        allowedUpdates.forEach(field => {
+            if (updates[field] !== undefined) {
+                user[field] = updates[field];
+            }
+        });
+
+        // Always mark as completed when this endpoint is called
+        user.hasCompletedOnboarding = true;
+
+        // Initialize history if empty
+        if (user.weightHistory.length === 0) {
+            user.weightHistory.push({ weight: user.weight, date: new Date() });
+        }
+        if (user.heightHistory.length === 0) {
+            user.heightHistory.push({ height: user.height, date: new Date() });
+        }
+        if (user.goalHistory.length === 0) {
+            user.goalHistory.push({
+                dailyCalorieGoal: user.dailyCalorieGoal,
+                dailyProteinGoal: user.dailyProteinGoal,
+                dailyCarbsGoal: user.dailyCarbsGoal,
+                dailyFatGoal: user.dailyFatGoal,
+                date: new Date()
+            });
+        }
+
+        await user.save();
+
+        res.json({ message: 'Onboarding completed', user });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Forgot password
+router.post('/forgot-password', async (req, res) => {
+    try {
+        const { email } = req.body;
+
+        const user = await User.findOne({ email: email.toLowerCase() });
+        if (!user) {
+            // Return success even if user doesn't exist (security best practice)
+            return res.json({ message: 'If an account exists with that email, a password reset link has been sent.' });
+        }
+
+        // Generate reset token
+        const resetToken = user.generatePasswordResetToken();
+        await user.save();
+
+        // Send email
+        const emailResult = await sendPasswordResetEmail(user.email, resetToken, user.name);
+
+        if (!emailResult.success) {
+            console.error('Failed to send reset email:', emailResult.error);
+            return res.status(500).json({ message: 'Error sending reset email. Please try again later.' });
+        }
+
+        res.json({ message: 'If an account exists with that email, a password reset link has been sent.' });
+    } catch (error) {
+        console.error('Forgot password error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Reset password
+router.post('/reset-password/:token', async (req, res) => {
+    try {
+        const { password } = req.body;
+        const { token } = req.params;
+
+        if (!password || password.length < 6) {
+            return res.status(400).json({ message: 'Password must be at least 6 characters long' });
+        }
+
+        // Hash the token to compare with stored hash
+        const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
+
+        const user = await User.findOne({
+            resetPasswordToken: hashedToken,
+            resetPasswordExpires: { $gt: Date.now() }
+        });
+
+        if (!user) {
+            return res.status(400).json({ message: 'Invalid or expired reset token' });
+        }
+
+        // Update password and clear reset fields
+        user.password = password;
+        user.resetPasswordToken = undefined;
+        user.resetPasswordExpires = undefined;
+        await user.save();
+
+        res.json({ message: 'Password reset successful. You can now login with your new password.' });
+    } catch (error) {
+        console.error('Reset password error:', error);
+        res.status(500).json({ message: error.message });
+    }
+});
+
+// Google OAuth callback
+router.post('/google', async (req, res) => {
+    try {
+        const { googleId, email, name, profilePicture } = req.body;
+
+        if (!googleId || !email) {
+            return res.status(400).json({ message: 'Missing required Google OAuth data' });
+        }
+
+        // Check if user exists
+        let user = await User.findOne({ email: email.toLowerCase() });
+
+        if (!user) {
+            // Create new user from Google OAuth
+            user = new User({
+                name,
+                email: email.toLowerCase(),
+                profilePicture,
+                authProvider: 'google',
+                hasCompletedOnboarding: false
+                // No password needed for OAuth users
+            });
+            await user.save();
+        } else {
+            // Update existing user if they signed up with different method
+            if (user.authProvider !== 'google') {
+                user.authProvider = 'google';
+                if (profilePicture) user.profilePicture = profilePicture;
+                await user.save();
+            }
+        }
+
+        // Generate token
+        const token = jwt.sign(
+            { userId: user._id },
+            process.env.JWT_SECRET || 'your_jwt_secret_key_here',
+            { expiresIn: '7d' }
+        );
+
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                _id: user._id,
+                name: user.name,
+                email: user.email,
+                age: user.age,
+                gender: user.gender,
+                height: user.height,
+                weight: user.weight,
+                activityLevel: user.activityLevel,
+                dailyCalorieGoal: user.dailyCalorieGoal,
+                dailyProteinGoal: user.dailyProteinGoal,
+                dailyCarbsGoal: user.dailyCarbsGoal,
+                dailyFatGoal: user.dailyFatGoal,
+                profilePicture: user.profilePicture,
+                authProvider: user.authProvider,
+                hasCompletedOnboarding: user.hasCompletedOnboarding,
+                targetWeight: user.targetWeight,
+                goalType: user.goalType
+            }
+        });
+    } catch (error) {
+        console.error('Google OAuth error:', error);
         res.status(500).json({ message: error.message });
     }
 });

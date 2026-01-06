@@ -46,6 +46,7 @@ const foodRoutes = require('./routes/foods');
 const mealRoutes = require('./routes/meals');
 const manualMealRoutes = require('./routes/manualMeals');
 const analyzeRoutes = require('./routes/analyze');
+const foodAnalysisRoutes = require('./routes/foodRoutes');
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -53,6 +54,7 @@ app.use('/api/foods', foodRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/manual-meals', manualMealRoutes);
 app.use('/api/analyze', analyzeRoutes);
+app.use('/api/food', foodAnalysisRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {

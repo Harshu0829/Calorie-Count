@@ -1,5 +1,5 @@
 const express = require('express');
-const Food = require('../models/Food');
+const { Food } = require('../models/Food');
 const { getAllFoodNames, getFoodDatabase, calculateCalories } = require('../utils/foodDatabase');
 
 const router = express.Router();
@@ -8,19 +8,19 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const foods = await Food.find().sort({ name: 1 });
-        
+
         // If no foods in database, return static database
         if (foods.length === 0) {
             const staticFoods = Object.entries(getFoodDatabase()).map(([name, data]) => ({
                 name,
-                displayName: name.split('_').map(word => 
+                displayName: name.split('_').map(word =>
                     word.charAt(0).toUpperCase() + word.slice(1)
                 ).join(' '),
                 ...data
             }));
             return res.json({ foods: staticFoods });
         }
-        
+
         res.json({ foods });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -41,11 +41,11 @@ router.get('/names', (req, res) => {
 router.post('/calculate', (req, res) => {
     try {
         const { food_name, weight_grams } = req.body;
-        
+
         if (!food_name || !weight_grams) {
             return res.status(400).json({ message: 'food_name and weight_grams are required' });
         }
-        
+
         const result = calculateCalories(food_name, parseFloat(weight_grams));
         res.json(result);
     } catch (error) {
@@ -60,14 +60,14 @@ router.get('/search', async (req, res) => {
         if (!query) {
             return res.status(400).json({ message: 'Search query is required' });
         }
-        
+
         const foods = await Food.find({
             $or: [
                 { name: { $regex: query, $options: 'i' } },
                 { displayName: { $regex: query, $options: 'i' } }
             ]
         }).limit(20);
-        
+
         res.json({ foods });
     } catch (error) {
         res.status(500).json({ message: error.message });

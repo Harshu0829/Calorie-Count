@@ -50,13 +50,13 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', token);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
-      
+
       return { success: true };
     } catch (error) {
       console.error('Login error:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Login failed'
+        message: error.response?.data?.detail || error.response?.data?.message || 'Login failed'
       };
     }
   };
@@ -64,18 +64,18 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       const response = await api.post('/auth/register', userData);
-      
+
       const { token, user } = response.data;
       localStorage.setItem('token', token);
       api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
       setUser(user);
-      
+
       return { success: true };
     } catch (error) {
       console.error('Register error:', error);
       return {
         success: false,
-        message: error.response?.data?.message || 'Registration failed'
+        message: error.response?.data?.detail || error.response?.data?.message || 'Registration failed'
       };
     }
   };
@@ -86,13 +86,61 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const requestPasswordReset = async (email) => {
+    try {
+      const response = await api.post('/auth/forgot-password', { email });
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      console.error('Password reset request error:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to send reset email'
+      };
+    }
+  };
+
+  const resetPassword = async (token, password) => {
+    try {
+      const response = await api.post(`/auth/reset-password/${token}`, { password });
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      console.error('Password reset error:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Failed to reset password'
+      };
+    }
+  };
+
+  const googleLogin = async (googleData) => {
+    try {
+      const response = await api.post('/auth/google', googleData);
+
+      const { token, user } = response.data;
+      localStorage.setItem('token', token);
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      setUser(user);
+
+      return { success: true, user };
+    } catch (error) {
+      console.error('Google login error:', error);
+      return {
+        success: false,
+        message: error.response?.data?.message || 'Google login failed'
+      };
+    }
+  };
+
   const value = {
     user,
     loading,
     login,
     register,
     logout,
-    fetchUser
+    fetchUser,
+    requestPasswordReset,
+    resetPassword,
+    googleLogin
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

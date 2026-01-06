@@ -113,6 +113,32 @@ const Profile = () => {
 
   const suggestedCalorieGoal = calculateTDEE() || formData.dailyCalorieGoal;
 
+  // Calculate suggested macronutrient goals
+  const calculateSuggestedMacros = () => {
+    const tdee = calculateTDEE();
+    const weight = formData.weight;
+
+    if (!tdee || !weight) return null;
+
+    // Protein: 1.6-2.2g per kg body weight (using 1.8g for balanced approach)
+    const suggestedProtein = Math.round(weight * 1.8);
+
+    // Standard macronutrient distribution:
+    // Protein: 25% of calories (4 cal/g)
+    // Carbs: 50% of calories (4 cal/g)
+    // Fat: 25% of calories (9 cal/g)
+    const suggestedCarbs = Math.round((tdee * 0.50) / 4);
+    const suggestedFat = Math.round((tdee * 0.25) / 9);
+
+    return {
+      protein: suggestedProtein,
+      carbs: suggestedCarbs,
+      fat: suggestedFat
+    };
+  };
+
+  const suggestedMacros = calculateSuggestedMacros();
+
   if (!user) {
     return (
       <div className="profile">
@@ -278,6 +304,11 @@ const Profile = () => {
                     max="300"
                     placeholder="Enter protein goal"
                   />
+                  {suggestedMacros && (
+                    <p className="form-hint">
+                      Suggested protein goal: {suggestedMacros.protein}g (1.8g per kg body weight)
+                    </p>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -292,6 +323,11 @@ const Profile = () => {
                     max="500"
                     placeholder="Enter carbs goal"
                   />
+                  {suggestedMacros && (
+                    <p className="form-hint">
+                      Suggested carbs goal: {suggestedMacros.carbs}g (50% of daily calories)
+                    </p>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -306,6 +342,11 @@ const Profile = () => {
                     max="200"
                     placeholder="Enter fat goal"
                   />
+                  {suggestedMacros && (
+                    <p className="form-hint">
+                      Suggested fat goal: {suggestedMacros.fat}g (25% of daily calories)
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -326,14 +367,22 @@ const Profile = () => {
           <div className="history-section">
             <h4>Weight History</h4>
             {formData.weightHistory && formData.weightHistory.length > 0 ? (
-              <ul className="history-list">
-                {formData.weightHistory.slice().reverse().map((entry, index) => (
-                  <li key={index} className="history-item">
-                    <span className="history-date">{new Date(entry.date).toLocaleDateString()}</span>
-                    <span className="history-value">{entry.weight} kg</span>
-                  </li>
-                ))}
-              </ul>
+              <table className="history-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Weight (kg)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formData.weightHistory.slice().reverse().map((entry, index) => (
+                    <tr key={index}>
+                      <td>{new Date(entry.date).toLocaleDateString()}</td>
+                      <td>{entry.weight}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
               <p className="no-history">No weight history available</p>
             )}
@@ -342,14 +391,22 @@ const Profile = () => {
           <div className="history-section">
             <h4>Height History</h4>
             {formData.heightHistory && formData.heightHistory.length > 0 ? (
-              <ul className="history-list">
-                {formData.heightHistory.slice().reverse().map((entry, index) => (
-                  <li key={index} className="history-item">
-                    <span className="history-date">{new Date(entry.date).toLocaleDateString()}</span>
-                    <span className="history-value">{entry.height} cm</span>
-                  </li>
-                ))}
-              </ul>
+              <table className="history-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Height (cm)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formData.heightHistory.slice().reverse().map((entry, index) => (
+                    <tr key={index}>
+                      <td>{new Date(entry.date).toLocaleDateString()}</td>
+                      <td>{entry.height}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
               <p className="no-history">No height history available</p>
             )}
@@ -358,19 +415,28 @@ const Profile = () => {
           <div className="history-section">
             <h4>Goal History</h4>
             {formData.goalHistory && formData.goalHistory.length > 0 ? (
-              <ul className="history-list">
-                {formData.goalHistory.slice().reverse().map((entry, index) => (
-                  <li key={index} className="history-item">
-                    <span className="history-date">{new Date(entry.date).toLocaleDateString()}</span>
-                    <div className="history-goals">
-                      <span>{entry.dailyCalorieGoal} kcal</span>
-                      <span>P: {entry.dailyProteinGoal}g</span>
-                      <span>C: {entry.dailyCarbsGoal}g</span>
-                      <span>F: {entry.dailyFatGoal}g</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <table className="history-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Calories (kcal)</th>
+                    <th>Protein (g)</th>
+                    <th>Carbs (g)</th>
+                    <th>Fat (g)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {formData.goalHistory.slice().reverse().map((entry, index) => (
+                    <tr key={index}>
+                      <td>{new Date(entry.date).toLocaleDateString()}</td>
+                      <td>{entry.dailyCalorieGoal}</td>
+                      <td>{entry.dailyProteinGoal}</td>
+                      <td>{entry.dailyCarbsGoal}</td>
+                      <td>{entry.dailyFatGoal}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
               <p className="no-history">No goal history available</p>
             )}

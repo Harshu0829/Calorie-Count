@@ -1,13 +1,16 @@
-backend/
-frontend-old/
-README.md
-QUICK_START.md
-SETUP_GUIDE.md
-START_HERE.md
-start_backend.bat
-start_backend.sh
-START_BACKEND.md
+# ML Model files and training data
+backend/models/*.pth
+backend/data/
+backend/logs/
+backend/ml_model/
+backend/scripts/download_dataset.py
+backend/requirements-ml.txt
 
+# Python cache
+__pycache__/
+*.pyc
+.cache/
 
-
-
+# Development files
+.env
+*.log

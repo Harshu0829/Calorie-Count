@@ -8,12 +8,7 @@ const Register = () => {
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',
-    age: '',
-    gender: '',
-    height: '',
-    weight: '',
-    activityLevel: 'sedentary'
+    confirmPassword: ''
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,13 +40,13 @@ const Register = () => {
 
     const { confirmPassword, ...userData } = formData;
     const result = await register(userData);
-    
+
     if (result.success) {
-      navigate('/dashboard');
+      navigate('/onboarding');
     } else {
       setError(result.message);
     }
-    
+
     setLoading(false);
   };
 
@@ -120,81 +115,6 @@ const Register = () => {
               </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="age">Age</label>
-                <input
-                  type="number"
-                  id="age"
-                  name="age"
-                  value={formData.age}
-                  onChange={handleChange}
-                  min="1"
-                  max="120"
-                  placeholder="Age"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="gender">Gender</label>
-                <select
-                  id="gender"
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleChange}
-                >
-                  <option value="">Select</option>
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label htmlFor="height">Height (cm)</label>
-                <input
-                  type="number"
-                  id="height"
-                  name="height"
-                  value={formData.height}
-                  onChange={handleChange}
-                  min="0"
-                  placeholder="Height in cm"
-                />
-              </div>
-
-              <div className="form-group">
-                <label htmlFor="weight">Weight (kg)</label>
-                <input
-                  type="number"
-                  id="weight"
-                  name="weight"
-                  value={formData.weight}
-                  onChange={handleChange}
-                  min="0"
-                  placeholder="Weight in kg"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label htmlFor="activityLevel">Activity Level</label>
-              <select
-                id="activityLevel"
-                name="activityLevel"
-                value={formData.activityLevel}
-                onChange={handleChange}
-              >
-                <option value="sedentary">Sedentary</option>
-                <option value="lightly_active">Lightly Active</option>
-                <option value="moderately_active">Moderately Active</option>
-                <option value="very_active">Very Active</option>
-                <option value="extremely_active">Extremely Active</option>
-              </select>
-            </div>
-
             <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
               {loading ? 'Creating account...' : 'Sign Up'}
             </button>
@@ -210,4 +130,3 @@ const Register = () => {
 };
 
 export default Register;
-

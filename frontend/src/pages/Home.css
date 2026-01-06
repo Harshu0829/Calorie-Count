@@ -307,3 +307,122 @@
     grid-template-columns: 1fr;
   }
 }
+/* --- Futuristic Coming Soon Section --- */
+.coming-soon-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 75vh;
+  text-align: center;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-radius: 40px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 80px 40px;
+  box-shadow: 
+    0 25px 50px -12px rgba(0, 0, 0, 0.5),
+    inset 0 0 20px rgba(255, 255, 255, 0.05);
+  margin: 40px auto;
+  max-width: 900px;
+  position: relative;
+  overflow: hidden;
+}
+
+.coming-soon-container::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(249, 115, 22, 0.08) 0%, transparent 70%);
+  animation: rotateGlow 30s linear infinite;
+  pointer-events: none;
+}
+
+@keyframes rotateGlow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.coming-soon-icon {
+  font-size: 7rem;
+  color: #fff;
+  margin-bottom: 40px;
+  filter: drop-shadow(0 0 30px rgba(249, 115, 22, 0.8));
+  animation: float 6s ease-in-out infinite;
+  position: relative;
+  z-index: 2;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) scale(1) rotateY(0deg); }
+  50% { transform: translateY(-30px) scale(1.1) rotateY(180deg); }
+}
+
+.coming-soon-title {
+  font-size: 5rem;
+  font-weight: 900;
+  margin-bottom: 24px;
+  color: #fff;
+  letter-spacing: -3px;
+  text-transform: uppercase;
+  background: linear-gradient(180deg, #fff 40%, #f97316 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 0.9;
+  position: relative;
+  z-index: 2;
+}
+
+.coming-soon-subtitle {
+  font-size: 1.5rem;
+  color: rgba(248, 250, 252, 0.7);
+  max-width: 650px;
+  line-height: 1.7;
+  font-weight: 300;
+  letter-spacing: 1px;
+  position: relative;
+  z-index: 2;
+}
+
+.coming-soon-glow {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.15) 0%, transparent 75%);
+  z-index: 0;
+  pointer-events: none;
+  filter: blur(80px);
+}
+
+.mt-12 {
+  margin-top: 4rem;
+}
+
+.btn-futuristic {
+  background: var(--accent-gradient);
+  padding: 20px 50px;
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: 3px;
+  transition: all 0.5s cubic-bezier(0.19, 1, 0.22, 1);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 100px;
+  color: white;
+  text-decoration: none;
+  font-weight: 800;
+  display: inline-block;
+  box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3);
+  position: relative;
+  z-index: 2;
+}
+
+.btn-futuristic:hover {
+  letter-spacing: 6px;
+  transform: translateY(-5px) scale(1.02);
+  box-shadow: 0 20px 40px rgba(249, 115, 22, 0.5), 0 0 20px rgba(249, 115, 22, 0.4);
+}

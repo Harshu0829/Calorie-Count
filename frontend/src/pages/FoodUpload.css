@@ -1,0 +1,335 @@
+.food-upload-page {
+    min-height: calc(100vh - 80px);
+    padding: 2rem;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+.upload-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.page-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+    margin-bottom: 0.5rem;
+}
+
+.page-subtitle {
+    text-align: center;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 1.1rem;
+    margin-bottom: 2rem;
+}
+
+.upload-area {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 3rem;
+    border: 3px dashed #667eea;
+    transition: all 0.3s ease;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.upload-area:hover {
+    border-color: #764ba2;
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 10px 40px rgba(102, 126, 234, 0.3);
+}
+
+.upload-prompt {
+    text-align: center;
+}
+
+.upload-icon {
+    font-size: 4rem;
+    color: #667eea;
+    margin-bottom: 1rem;
+}
+
+.upload-prompt h3 {
+    font-size: 1.5rem;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.upload-prompt p {
+    color: #666;
+    margin: 1rem 0;
+}
+
+.image-preview {
+    position: relative;
+    width: 100%;
+    max-width: 600px;
+}
+
+.image-preview img {
+    width: 100%;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.btn-remove {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    background: rgba(255, 0, 0, 0.8);
+    color: white;
+    border: none;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-remove:hover {
+    background: rgba(255, 0, 0, 1);
+    transform: scale(1.05);
+}
+
+.btn-analyze {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 400px;
+    margin: 2rem auto;
+    padding: 1rem 2rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 15px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-analyze:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+}
+
+.btn-analyze:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.results-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 2.5rem;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+}
+
+.results-header {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.success-icon {
+    font-size: 3rem;
+    color: #10b981;
+    margin-bottom: 1rem;
+}
+
+.results-header h2 {
+    font-size: 2rem;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.food-name {
+    font-size: 1.5rem;
+    color: #667eea;
+    font-weight: 600;
+    display: block;
+    margin-bottom: 1rem;
+    text-transform: capitalize;
+}
+
+.confidence-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+}
+
+.nutrition-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.nutrition-card {
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    padding: 1.5rem;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: all 0.3s ease;
+}
+
+.nutrition-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.nutrition-card.calories {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+}
+
+.nutrition-card.protein {
+    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+}
+
+.nutrition-card.carbs {
+    background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+}
+
+.nutrition-card.fat {
+    background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+}
+
+.card-icon {
+    font-size: 2.5rem;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.card-content .label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 500;
+}
+
+.card-content .value {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+}
+
+.card-content .unit {
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.micronutrients-section {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 15px;
+    margin-bottom: 2rem;
+}
+
+.micronutrients-section h3 {
+    font-size: 1.3rem;
+    color: #333;
+    margin-bottom: 1rem;
+}
+
+.micro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.micro-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem;
+    background: white;
+    border-radius: 10px;
+    border-left: 4px solid #667eea;
+}
+
+.micro-label {
+    font-weight: 600;
+    color: #666;
+}
+
+.micro-value {
+    font-weight: 700;
+    color: #333;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.action-buttons .btn {
+    padding: 0.75rem 2rem;
+    font-weight: 600;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-secondary {
+    background: #e5e7eb;
+    color: #333;
+}
+
+.btn-secondary:hover {
+    background: #d1d5db;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+}
+
+.error-message {
+    background: #fee2e2;
+    color: #dc2626;
+    padding: 1rem;
+    border-radius: 10px;
+    margin: 1rem auto;
+    max-width: 500px;
+    text-align: center;
+    font-weight: 600;
+    border-left: 4px solid #dc2626;
+}
