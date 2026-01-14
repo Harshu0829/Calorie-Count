@@ -108,7 +108,8 @@ const userSchema = new mongoose.Schema({
         enum: ['lose', 'maintain', 'gain']
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    bufferCommands: false // Disable buffering for this model
 });
 
 // Hash password before saving
