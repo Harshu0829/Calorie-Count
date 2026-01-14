@@ -21,12 +21,34 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/calorie-tracker';
-mongoose.connect(MONGODB_URI)
-    .then(() => console.log('MongoDB Connected'))
-    .catch(err => console.error('MongoDB connection error:', err));
+const MONGODB_URI = process.env.MONGODB_URI;
+
+if (!MONGODB_URI) {
+    console.error('❌ CRITICAL: MONGODB_URI is not defined in environment variables');
+}
+
+mongoose.connect(MONGODB_URI || 'mongodb://localhost:27017/calorie-tracker', {
+    bufferCommands: false, // Disable buffering so it fails fast if not connected
+})
+    .then(() => console.log('✅ MongoDB Connected'))
+    .catch(err => {
+        console.error('❌ MongoDB connection error details:', err.message);
+    });
+
+// Middleware to check DB connection
+const dbCheck = (req, res, next) => {
+    if (mongoose.connection.readyState !== 1) {
+        return res.status(503).json({
+            success: false,
+            message: 'Database not connected. Provide MONGODB_URI in environment variables.',
+            readyState: mongoose.connection.readyState
+        });
+    }
+    next();
+};
 
 // Routes
+app.use('/api', dbCheck);
 app.use('/api/auth', authRoutes);
 app.use('/api/foods', foodRoutes);
 app.use('/api/meals', mealRoutes);
