@@ -67,7 +67,21 @@ if (process.env.NODE_ENV === 'production' || process.env.NODE_ENV === 'developme
     app.use(express.static(path.join(__dirname, '../frontend/build')));
 
     app.get('*', (req, res) => {
-        res.sendFile(path.resolve(__dirname, '../frontend', 'build', 'index.html'));
+        const indexPath = path.resolve(__dirname, '../frontend', 'build', 'index.html');
+        res.sendFile(indexPath, (err) => {
+            if (err) {
+                // Return 404 if API route not handled
+                if (req.path.startsWith('/api')) {
+                    return res.status(404).json({ message: `API route ${req.path} not found` });
+                }
+                // Return descriptive error for missing frontend build
+                res.status(404).json({
+                    message: "Static file not found. If this is a new deployment, ensure the frontend is built.",
+                    error: err.message,
+                    status: "error"
+                });
+            }
+        });
     });
 }
 

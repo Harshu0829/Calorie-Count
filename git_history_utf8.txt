@@ -1,0 +1,20 @@
+﻿132927f013ca1cc940a3995ec06c692ed7e1d99f|2026-01-13|Fix ENOENT on Render (missing frontend build)
+4a00d11f36588ae5c8d3da5d580669ede126e0a3|2026-01-13|Fix logger crash on Vercel
+667d7fec70c6a71918f8e7afe9c400b09da2fe44|2026-01-12|Add try-catch block to Vercel entry point for debugging
+9a2da9429823514f7cdc0ef2e616a3175b6642df|2026-01-12|Add debug logs to Vercel entry point
+47a7bcf5d7a0030777670e7043436654a9222cd2|2026-01-12|Restore missing middleware in server.js
+0c053f32bf522512a0bd6b028763ac4a8276906c|2026-01-12|Fix build errors: Remove unused functions and vars
+eb5c505e7ab43ec634068cf2639245421efee8e8|2026-01-12|Fix CORS trailing slash issue
+9f423f01d367e59685348c4d5d9cf9055668dbcb|2026-01-12|Update deployment configuration with actual Vercel URL
+f1f4cd75eb1455a12cbfe7e378181a37654702cd|2026-01-12|Add copyright notice and license
+dae7d2713296bd352ccc1f812bdb6efb037dcfa4|2026-01-12|Integrate OWASP security best practices and configure Vercel deployment
+5c2c68c721ad7fa66f5c9f9de2289bd0d563fc21|2026-01-07|Fix: Remove unused variables to resolve Vercel ESLint build errors
+b4e1fc6e542f4df7e84689dbac51943f28457a60|2026-01-06|Fix: Update vercel.json for Node.js backend and correct API routing
+71b01b6e63900c1f1e5c3c5e7cb3e0af40dd13fa|2026-01-06|Refactor: Clean project structure, implement futuristic Coming Soon page, and resolve codebase errors
+c34d4de5462bfdcca41f84b1b5ee7cc62cf84311|2025-11-25|fix: remove backend npm install from vercel config
+ee9ff0b89d17f677564f58c93dd80e18a4e827b4|2025-11-25|fix: update vercel.json with correct monorepo configuration
+d45d1af1d08a2c0fbea9f12bc7603448b436ecbd|2025-11-25|fix: resolve 404 errors and remove achievement features - Configure Node.js backend to serve React frontend with SPA fallback - Update root vercel.json for proper monorepo routing - Remove Achievement model and all streak tracking features - Clean up unused CSS for achievements and streaks
+1bae7bb9ea7b3d459379a07f341fa41a8633a1f7|2025-11-25|Project cleanup - remove unused AchievementBadge component
+73fee4e136cde2a370508d2ba7d4ba978a5109ba|2025-11-25|Fix build errors - remove all achievement UI references
+a36967a566d801d779a3b533d083e5eda45acfc9|2025-11-25|Remove all achievement and streak features from Dashboard
+a2745ed532784a94422645ac752cf8d8642500af|2025-11-25|Fix 404 error - add _redirects and update vercel.json routes
