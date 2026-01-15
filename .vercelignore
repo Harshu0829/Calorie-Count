@@ -1,16 +1,8 @@
-# ML Model files and training data
-backend/models/*.pth
-backend/data/
-backend/logs/
-backend/ml_model/
-backend/scripts/download_dataset.py
-backend/requirements-ml.txt
-
-# Python cache
-__pycache__/
-*.pyc
-.cache/
-
-# Development files
-.env
-*.log
+node_modules
+backend
+.git
+.vercel
+README.md
+task.md
+walkthrough.md
+implementation_plan.md
