@@ -106,6 +106,11 @@ const userSchema = new mongoose.Schema({
     goalType: {
         type: String,
         enum: ['lose', 'maintain', 'gain']
+    },
+    medicalHistory: {
+        type: String,
+        enum: ['none', 'diabetes', 'hypertension', 'hypothyroidism', 'kidney_issues', 'other'],
+        default: 'none'
     }
 }, {
     timestamps: true,

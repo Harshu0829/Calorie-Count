@@ -21,6 +21,7 @@ const Profile = () => {
     dailyProteinGoal: 50,
     dailyCarbsGoal: 250,
     dailyFatGoal: 65,
+    medicalHistory: 'none',
     weightHistory: [],
     heightHistory: [],
     goalHistory: []
@@ -46,6 +47,7 @@ const Profile = () => {
         dailyProteinGoal: user.dailyProteinGoal || 50,
         dailyCarbsGoal: user.dailyCarbsGoal || 250,
         dailyFatGoal: user.dailyFatGoal || 65,
+        medicalHistory: user.medicalHistory || 'none',
         weightHistory: user.weightHistory || [],
         heightHistory: user.heightHistory || [],
         goalHistory: user.goalHistory || []
@@ -66,7 +68,7 @@ const Profile = () => {
   const handleSave = async () => {
     try {
       setLoading(true);
-      await api.put('/users/me', formData);
+      await api.put('/auth/profile', formData);
       await fetchUser();
       alert('Profile updated successfully! 🎉');
     } catch (error) {
@@ -108,7 +110,13 @@ const Profile = () => {
       extremely_active: 1.9
     };
 
-    return Math.round(bmr * (activityMultipliers[formData.activityLevel] || 1.2));
+    const maintenanceCalories = Math.round(bmr * (activityMultipliers[formData.activityLevel] || 1.2));
+
+    if (formData.medicalHistory === 'hypothyroidism') {
+      return Math.round(maintenanceCalories * 0.9);
+    }
+
+    return maintenanceCalories;
   };
 
   const suggestedCalorieGoal = calculateTDEE() || formData.dailyCalorieGoal;
@@ -120,15 +128,23 @@ const Profile = () => {
 
     if (!tdee || !weight) return null;
 
-    // Protein: 1.6-2.2g per kg body weight (using 1.8g for balanced approach)
-    const suggestedProtein = Math.round(weight * 1.8);
+    // Protein
+    let suggestedProtein;
+    if (formData.medicalHistory === 'kidney_issues') {
+      suggestedProtein = Math.round(weight * 1.0);
+    } else {
+      suggestedProtein = Math.round(weight * 2);
+    }
 
-    // Standard macronutrient distribution:
-    // Protein: 25% of calories (4 cal/g)
-    // Carbs: 50% of calories (4 cal/g)
-    // Fat: 25% of calories (9 cal/g)
-    const suggestedCarbs = Math.round((tdee * 0.50) / 4);
-    const suggestedFat = Math.round((tdee * 0.25) / 9);
+    // Carbs & Fat
+    let suggestedCarbs, suggestedFat;
+    if (formData.medicalHistory === 'diabetes') {
+      suggestedCarbs = Math.round((tdee * 0.35) / 4);
+      suggestedFat = Math.round((tdee - (suggestedProtein * 4) - (suggestedCarbs * 4)) / 9);
+    } else {
+      suggestedFat = Math.round((tdee * 0.25) / 9);
+      suggestedCarbs = Math.round((tdee - (suggestedProtein * 4) - (suggestedFat * 9)) / 4);
+    }
 
     return {
       protein: suggestedProtein,
@@ -271,6 +287,26 @@ const Profile = () => {
                     Suggested daily calorie goal: {suggestedCalorieGoal} kcal
                   </p>
                 )}
+              </div>
+
+              <div className="form-group">
+                <label>Medical history</label>
+                <select
+                  name="medicalHistory"
+                  value={formData.medicalHistory}
+                  onChange={handleChange}
+                  className="form-input"
+                >
+                  <option value="none">None / Healthy</option>
+                  <option value="diabetes">Diabetes</option>
+                  <option value="hypertension">Hypertension</option>
+                  <option value="hypothyroidism">Hypothyroidism</option>
+                  <option value="kidney_issues">Kidney Issues</option>
+                  <option value="other">Other</option>
+                </select>
+                <p className="form-hint">
+                  Your macro suggestions will adjust based on your medical condition.
+                </p>
               </div>
             </div>
 

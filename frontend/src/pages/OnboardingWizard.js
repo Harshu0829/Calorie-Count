@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { StepPhysical, StepActivity, StepGoals, StepReview } from '../components/OnboardingSteps';
+import { StepPhysical, StepActivity, StepGoals, StepMedical, StepReview } from '../components/OnboardingSteps';
 import api from '../services/api';
 import './Onboarding.css';
 
@@ -17,7 +17,8 @@ const OnboardingWizard = () => {
         weight: '',
         activityLevel: 'sedentary',
         goalType: 'maintain',
-        targetWeight: ''
+        targetWeight: '',
+        medicalHistory: 'none'
     });
 
     // Pre-fill data if user already has some (e.g. from registration)
@@ -30,7 +31,8 @@ const OnboardingWizard = () => {
                 gender: user.gender || '',
                 height: user.height || '',
                 weight: user.weight || '',
-                activityLevel: user.activityLevel || 'sedentary'
+                activityLevel: user.activityLevel || 'sedentary',
+                medicalHistory: user.medicalHistory || 'none'
             }));
         }
     }, [user]);
@@ -40,7 +42,7 @@ const OnboardingWizard = () => {
     };
 
     const nextStep = () => {
-        if (currentStep < 4) setCurrentStep(curr => curr + 1);
+        if (currentStep < 5) setCurrentStep(curr => curr + 1);
     };
 
     const prevStep = () => {
@@ -88,10 +90,27 @@ const OnboardingWizard = () => {
             if (data.goalType === 'lose') targetCalories -= 500;
             if (data.goalType === 'gain') targetCalories += 300;
 
-            // Macros (High Protein)
-            const protein = Math.round(weight * 2);
-            const fat = Math.round((targetCalories * 0.25) / 9);
-            const carbs = Math.round((targetCalories - (protein * 4) - (fat * 9)) / 4);
+            // Medical Adjustments
+            if (data.medicalHistory === 'hypothyroidism') {
+                targetCalories = Math.round(targetCalories * 0.9);
+            }
+
+            // Macros
+            let protein, fat, carbs;
+
+            if (data.medicalHistory === 'kidney_issues') {
+                protein = Math.round(weight * 1.0);
+            } else {
+                protein = Math.round(weight * 2);
+            }
+
+            if (data.medicalHistory === 'diabetes') {
+                carbs = Math.round((targetCalories * 0.35) / 4);
+                fat = Math.round((targetCalories - (protein * 4) - (carbs * 4)) / 9);
+            } else {
+                fat = Math.round((targetCalories * 0.25) / 9);
+                carbs = Math.round((targetCalories - (protein * 4) - (fat * 9)) / 4);
+            }
 
             const payload = {
                 ...data,
@@ -120,7 +139,7 @@ const OnboardingWizard = () => {
         }
     };
 
-    const Steps = [StepPhysical, StepActivity, StepGoals, StepReview];
+    const Steps = [StepPhysical, StepActivity, StepGoals, StepMedical, StepReview];
     const CurrentStepComponent = Steps[currentStep - 1];
 
     return (
@@ -131,10 +150,10 @@ const OnboardingWizard = () => {
                     <div className="progress-bar-bg">
                         <div
                             className="progress-bar-fill"
-                            style={{ width: `${(currentStep / 4) * 100}%` }}
+                            style={{ width: `${(currentStep / 5) * 100}%` }}
                         ></div>
                     </div>
-                    <p className="step-indicator">Step {currentStep} of 4</p>
+                    <p className="step-indicator">Step {currentStep} of 5</p>
                 </div>
 
                 {/* Content */}
@@ -151,7 +170,7 @@ const OnboardingWizard = () => {
                             Back
                         </button>
 
-                        {currentStep < 4 ? (
+                        {currentStep < 5 ? (
                             <button
                                 className="btn btn-primary"
                                 onClick={nextStep}

@@ -2,7 +2,7 @@ import React from 'react';
 import {
     FaRulerVertical, FaWeight, FaBirthdayCake, FaVenusMars,
     FaBed, FaWalking, FaRunning, FaDumbbell, FaFire,
-    FaArrowDown, FaEquals, FaArrowUp
+    FaArrowDown, FaEquals, FaArrowUp, FaStethoscope
 } from 'react-icons/fa';
 import '../pages/Onboarding.css';
 
@@ -172,6 +172,43 @@ export const StepGoals = ({ data, updateData }) => {
     );
 };
 
+// Step 4: Medical History
+export const StepMedical = ({ data, updateData }) => {
+    const conditions = [
+        { value: 'none', label: 'None / Healthy', desc: 'No major medical conditions' },
+        { value: 'diabetes', label: 'Diabetes', desc: 'Blood sugar management focus' },
+        { value: 'hypertension', label: 'Hypertension', desc: 'Low sodium / Heart health focus' },
+        { value: 'hypothyroidism', label: 'Hypothyroidism', desc: 'Meta-boost / Weight management' },
+        { value: 'kidney_issues', label: 'Kidney Issues', desc: 'Low protein / Mineral management' },
+        { value: 'other', label: 'Other', desc: 'General healthy lifestyle focus' }
+    ];
+
+    return (
+        <div className="step-animation">
+            <div className="onboarding-header">
+                <h2>Medical History</h2>
+                <p>Any medical conditions we should know about? (Used for macro adjustments)</p>
+            </div>
+
+            <div className="activity-grid">
+                {conditions.map((option) => (
+                    <div
+                        key={option.value}
+                        className={`activity-card ${data.medicalHistory === option.value ? 'selected' : ''}`}
+                        onClick={() => updateData({ medicalHistory: option.value })}
+                    >
+                        <div className="activity-icon"><FaStethoscope /></div>
+                        <div className="activity-info">
+                            <h4>{option.label}</h4>
+                            <p>{option.desc}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+};
+
 // Step 4: Review
 export const StepReview = ({ data }) => {
     // Logic to calculate BMR/TDEE/Macros based on data
@@ -203,10 +240,29 @@ export const StepReview = ({ data }) => {
         if (data.goalType === 'lose') targetCalories -= 500;
         if (data.goalType === 'gain') targetCalories += 300;
 
+        // Medical Adjustments
+        if (data.medicalHistory === 'hypothyroidism') {
+            targetCalories = Math.round(targetCalories * 0.9); // 10% reduction due to lower metabolic rate
+        }
+
         // Macros
-        const protein = Math.round(weight * 2); // 2g per kg (high protein)
-        const fat = Math.round((targetCalories * 0.25) / 9);
-        const carbs = Math.round((targetCalories - (protein * 4) - (fat * 9)) / 4);
+        let protein, fat, carbs;
+
+        if (data.medicalHistory === 'kidney_issues') {
+            protein = Math.round(weight * 1.0); // Reduced protein
+        } else {
+            protein = Math.round(weight * 2); // 2g per kg (standard high protein)
+        }
+
+        if (data.medicalHistory === 'diabetes') {
+            // Lower carbs for diabetes: 35% calories from carbs
+            carbs = Math.round((targetCalories * 0.35) / 4);
+            fat = Math.round((targetCalories - (protein * 4) - (carbs * 4)) / 9);
+        } else {
+            // Standard macros
+            fat = Math.round((targetCalories * 0.25) / 9);
+            carbs = Math.round((targetCalories - (protein * 4) - (fat * 9)) / 4);
+        }
 
         return { tdee: targetCalories, protein, carbs, fat, bmr };
     };

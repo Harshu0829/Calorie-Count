@@ -10,7 +10,7 @@ const router = express.Router();
 // Register
 router.post('/register', async (req, res) => {
     try {
-        const { name, email, password, age, gender, height, weight, activityLevel } = req.body;
+        const { name, email, password, age, gender, height, weight, activityLevel, medicalHistory } = req.body;
 
         // Check if user exists
         const existingUser = await User.findOne({ email });
@@ -27,7 +27,8 @@ router.post('/register', async (req, res) => {
             gender,
             height,
             weight,
-            activityLevel
+            activityLevel,
+            medicalHistory: medicalHistory || 'none'
         });
 
         await user.save();
@@ -259,7 +260,7 @@ router.post('/onboarding', auth, async (req, res) => {
         const allowedUpdates = [
             'age', 'gender', 'height', 'weight', 'activityLevel',
             'dailyCalorieGoal', 'dailyProteinGoal', 'dailyCarbsGoal', 'dailyFatGoal',
-            'goalType', 'targetWeight', 'hasCompletedOnboarding'
+            'goalType', 'targetWeight', 'hasCompletedOnboarding', 'medicalHistory'
         ];
 
         allowedUpdates.forEach(field => {
@@ -420,7 +421,8 @@ router.post('/google', async (req, res) => {
                 authProvider: user.authProvider,
                 hasCompletedOnboarding: user.hasCompletedOnboarding,
                 targetWeight: user.targetWeight,
-                goalType: user.goalType
+                goalType: user.goalType,
+                medicalHistory: user.medicalHistory
             }
         });
     } catch (error) {
