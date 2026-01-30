@@ -1,19 +1,14 @@
 .footer {
     width: 100%;
-    padding: 2.5rem 0 100px;
-    /* Increased padding */
+    padding: 2rem 0;
     margin-top: auto;
-    background: rgba(15, 23, 42, 0.95);
-    backdrop-filter: blur(10px);
-    border-top: 2px solid var(--electric-blue);
-    /* More visible border */
-    color: var(--text-primary);
-    /* Brighter text for testing */
+    background: var(--secondary-bg);
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
     text-align: center;
     font-size: 0.9rem;
     position: relative;
-    z-index: 500;
-    /* Ensure it stays above content but below bottom-nav (1000) */
+    /* Ensure footer sits naturally in the flow */
 }
 
 .footer-content {
@@ -24,4 +19,11 @@
 
 .footer p {
     margin: 0;
+}
+
+@media (max-width: 768px) {
+    .footer {
+        /* Add extra padding at the bottom so content isn't hidden behind the fixed BottomNavigation */
+        padding-bottom: 100px;
+    }
 }
