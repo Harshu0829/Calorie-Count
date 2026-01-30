@@ -403,22 +403,24 @@ const Profile = () => {
           <div className="history-section">
             <h4>Weight History</h4>
             {formData.weightHistory && formData.weightHistory.length > 0 ? (
-              <table className="history-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Weight (kg)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formData.weightHistory.slice().reverse().map((entry, index) => (
-                    <tr key={index}>
-                      <td>{new Date(entry.date).toLocaleDateString()}</td>
-                      <td>{entry.weight}</td>
+              <div className="history-table-wrapper">
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Weight (kg)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {formData.weightHistory.slice().reverse().map((entry, index) => (
+                      <tr key={index}>
+                        <td>{new Date(entry.date).toLocaleDateString()}</td>
+                        <td>{entry.weight}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="no-history">No weight history available</p>
             )}
@@ -427,22 +429,24 @@ const Profile = () => {
           <div className="history-section">
             <h4>Height History</h4>
             {formData.heightHistory && formData.heightHistory.length > 0 ? (
-              <table className="history-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Height (cm)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formData.heightHistory.slice().reverse().map((entry, index) => (
-                    <tr key={index}>
-                      <td>{new Date(entry.date).toLocaleDateString()}</td>
-                      <td>{entry.height}</td>
+              <div className="history-table-wrapper">
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Height (cm)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {formData.heightHistory.slice().reverse().map((entry, index) => (
+                      <tr key={index}>
+                        <td>{new Date(entry.date).toLocaleDateString()}</td>
+                        <td>{entry.height}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="no-history">No height history available</p>
             )}
@@ -451,28 +455,30 @@ const Profile = () => {
           <div className="history-section">
             <h4>Goal History</h4>
             {formData.goalHistory && formData.goalHistory.length > 0 ? (
-              <table className="history-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Calories (kcal)</th>
-                    <th>Protein (g)</th>
-                    <th>Carbs (g)</th>
-                    <th>Fat (g)</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {formData.goalHistory.slice().reverse().map((entry, index) => (
-                    <tr key={index}>
-                      <td>{new Date(entry.date).toLocaleDateString()}</td>
-                      <td>{entry.dailyCalorieGoal}</td>
-                      <td>{entry.dailyProteinGoal}</td>
-                      <td>{entry.dailyCarbsGoal}</td>
-                      <td>{entry.dailyFatGoal}</td>
+              <div className="history-table-wrapper">
+                <table className="history-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Calories (kcal)</th>
+                      <th>Protein (g)</th>
+                      <th>Carbs (g)</th>
+                      <th>Fat (g)</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {formData.goalHistory.slice().reverse().map((entry, index) => (
+                      <tr key={index}>
+                        <td>{new Date(entry.date).toLocaleDateString()}</td>
+                        <td>{entry.dailyCalorieGoal}</td>
+                        <td>{entry.dailyProteinGoal}</td>
+                        <td>{entry.dailyCarbsGoal}</td>
+                        <td>{entry.dailyFatGoal}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
               <p className="no-history">No goal history available</p>
             )}

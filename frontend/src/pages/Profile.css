@@ -203,28 +203,8 @@
   box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
 }
 
-@media (max-width: 640px) {
-  .profile-header {
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-start;
-  }
-
-  .form-row {
-    grid-template-columns: 1fr;
-  }
-
-  .goals-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .form-actions .btn {
-    width: 100%;
-  }
+.form-actions .btn {
+  width: 100%;
 }
 
 /* History Table Styles */
@@ -249,17 +229,25 @@
   margin-bottom: 15px;
 }
 
+.history-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background: var(--secondary-bg);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  margin-bottom: 10px;
+}
+
 .history-table {
   width: 100%;
   border-collapse: collapse;
-  background: var(--secondary-bg);
-  border-radius: 10px;
-  overflow: hidden;
-  box-shadow: var(--shadow);
+  min-width: 300px;
+  /* Base min-width */
 }
 
 .history-table thead {
-  background: linear-gradient(135deg, var(--electric-blue), var(--neon-pink));
+  background: linear-gradient(135deg, var(--electric-blue), var(--neon-purple));
 }
 
 .history-table thead th {
@@ -270,6 +258,7 @@
   font-size: 0.9rem;
   text-transform: uppercase;
   letter-spacing: 1px;
+  white-space: nowrap;
 }
 
 .history-table tbody tr {
@@ -290,6 +279,7 @@
   padding: 15px;
   color: var(--text-primary);
   font-size: 0.95rem;
+  white-space: nowrap;
 }
 
 .history-table tbody td:first-child {
@@ -306,13 +296,54 @@
   border-radius: 10px;
 }
 
+/* --- Responsive Breakpoints (Moved to end to prevent overrides) --- */
 @media (max-width: 768px) {
+  .profile-header h1 {
+    font-size: 1.6rem;
+  }
+
   .history-table {
     font-size: 0.85rem;
+    min-width: 500px;
+    /* Force scroll on mobile for all columns */
   }
 
   .history-table thead th,
   .history-table tbody td {
-    padding: 10px 8px;
+    padding: 12px 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .profile-header {
+    flex-direction: column;
+    gap: 15px;
+    align-items: flex-start;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .goals-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .form-actions .btn {
+    width: 100%;
+  }
+
+  .avatar-image,
+  .avatar-placeholder {
+    width: 100px;
+    height: 100px;
+  }
+
+  .profile-avatar h2 {
+    font-size: 1.5rem;
   }
 }
