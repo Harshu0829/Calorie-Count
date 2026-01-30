@@ -1,5 +1,5 @@
 .dashboard {
-  padding: 20px 0 100px;
+  padding: 20px 0 20px;
   min-height: calc(100vh - 80px);
 }
 
@@ -564,6 +564,11 @@
 
   .timeline-marker {
     min-width: auto;
+    margin-bottom: 10px;
+  }
+
+  .dashboard-header h1 {
+    font-size: 1.5rem;
   }
 }
 
@@ -598,6 +603,26 @@
     margin-left: 0;
     width: 100%;
     justify-content: flex-end;
+    margin-top: 10px;
+  }
+
+  /* Additional Dashboard Mobile Fixes */
+  .manual-meal-input,
+  .today-summary,
+  .weekly-consumption,
+  .meal-timeline,
+  .motivational-quote-card,
+  .recent-meals {
+    padding: 15px;
+    border-radius: 12px;
+  }
+
+  .form-group label {
+    font-size: 0.8rem;
+  }
+
+  .calorie-remaining .value {
+    font-size: 2rem;
   }
 }
 

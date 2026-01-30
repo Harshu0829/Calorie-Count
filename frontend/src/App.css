@@ -55,6 +55,9 @@ body {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
+  /* Explicitly allow vertical scrolling */
+  position: relative;
 }
 
 .container {

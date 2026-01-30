@@ -333,3 +333,46 @@
         transform: rotate(360deg);
     }
 }
+
+@media (max-width: 600px) {
+    .food-history-page {
+        padding: 1rem;
+    }
+
+    .history-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .history-header h1 {
+        font-size: 2rem;
+    }
+
+    .totals-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .totals-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .total-item {
+        padding: 1rem;
+    }
+
+    .total-value {
+        font-size: 1.5rem;
+    }
+
+    .history-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .card-nutrients {
+        gap: 0.5rem;
+    }
+}

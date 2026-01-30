@@ -1,13 +1,19 @@
 .footer {
     width: 100%;
-    padding: 1.5rem 0;
+    padding: 2.5rem 0 100px;
+    /* Increased padding */
     margin-top: auto;
-    background: rgba(15, 15, 15, 0.8);
+    background: rgba(15, 23, 42, 0.95);
     backdrop-filter: blur(10px);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.6);
+    border-top: 2px solid var(--electric-blue);
+    /* More visible border */
+    color: var(--text-primary);
+    /* Brighter text for testing */
     text-align: center;
     font-size: 0.9rem;
+    position: relative;
+    z-index: 500;
+    /* Ensure it stays above content but below bottom-nav (1000) */
 }
 
 .footer-content {

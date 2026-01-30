@@ -333,3 +333,48 @@
     font-weight: 600;
     border-left: 4px solid #dc2626;
 }
+
+@media (max-width: 600px) {
+    .food-upload-page {
+        padding: 1rem;
+    }
+
+    .upload-container,
+    .results-container {
+        padding: 1.5rem;
+    }
+
+    .upload-area {
+        padding: 1.5rem;
+        min-height: 250px;
+    }
+
+    .upload-icon {
+        font-size: 3rem;
+    }
+
+    .page-title {
+        font-size: 2rem;
+    }
+
+    .card-content .value {
+        font-size: 1.5rem;
+    }
+
+    .card-icon {
+        font-size: 2rem;
+    }
+
+    .nutrition-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+    }
+
+    .action-buttons {
+        flex-direction: column;
+    }
+
+    .action-buttons .btn {
+        width: 100%;
+    }
+}

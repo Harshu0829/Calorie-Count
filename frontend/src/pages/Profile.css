@@ -1,5 +1,5 @@
 .profile {
-  padding: 20px 0 100px;
+  padding: 20px 0 20px;
   min-height: calc(100vh - 80px);
 }
 
@@ -310,7 +310,7 @@
   .history-table {
     font-size: 0.85rem;
   }
-  
+
   .history-table thead th,
   .history-table tbody td {
     padding: 10px 8px;

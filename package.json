@@ -1,6 +1,7 @@
 {
     "name": "calorie-tracker-root",
     "version": "1.0.0",
+    "license": "ISC",
     "private": true,
     "dependencies": {
         "bcryptjs": "^2.4.3",
