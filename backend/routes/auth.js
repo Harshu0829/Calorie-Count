@@ -304,8 +304,7 @@ router.post('/forgot-password', async (req, res) => {
 
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
-            // Return success even if user doesn't exist (security best practice)
-            return res.json({ message: 'If an account exists with that email, a password reset link has been sent.' });
+            return res.status(404).json({ message: 'User with this email does not exist.' });
         }
 
         // Generate reset token
