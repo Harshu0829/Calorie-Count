@@ -29,68 +29,70 @@ const ForgotPassword = () => {
     };
 
     return (
-        <div className="auth-container">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="auth-card"
-            >
-                <div className="auth-header">
-                    <h1>🔐 Forgot Password</h1>
-                    <p>Enter your email address and we'll send you a password reset link</p>
-                </div>
-
-                {message && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="alert alert-success"
-                    >
-                        ✅ {message}
-                    </motion.div>
-                )}
-
-                {error && (
-                    <motion.div
-                        initial={{ opacity: 0, y: -10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        className="alert alert-error"
-                    >
-                        ❌ {error}
-                    </motion.div>
-                )}
-
-                <form onSubmit={handleSubmit} className="auth-form">
-                    <div className="form-group">
-                        <label htmlFor="email">
-                            <FaEnvelope /> Email Address
-                        </label>
-                        <input
-                            type="email"
-                            id="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="Enter your email"
-                            required
-                            disabled={loading}
-                        />
+        <div className="auth-page">
+            <div className="auth-container">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="auth-card"
+                >
+                    <div className="auth-header">
+                        <h1>🔐 Forgot Password</h1>
+                        <p>Enter your email address and we'll send you a password reset link</p>
                     </div>
 
-                    <button
-                        type="submit"
-                        className="btn btn-primary btn-block"
-                        disabled={loading}
-                    >
-                        {loading ? 'Sending...' : 'Send Reset Link'}
-                    </button>
-                </form>
+                    {message && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="alert alert-success"
+                        >
+                            ✅ {message}
+                        </motion.div>
+                    )}
 
-                <div className="auth-footer">
-                    <Link to="/login" className="auth-link">
-                        <FaArrowLeft /> Back to Login
-                    </Link>
-                </div>
-            </motion.div>
+                    {error && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            className="alert alert-error"
+                        >
+                            ❌ {error}
+                        </motion.div>
+                    )}
+
+                    <form onSubmit={handleSubmit} className="auth-form">
+                        <div className="form-group">
+                            <label htmlFor="email">
+                                <FaEnvelope /> Email Address
+                            </label>
+                            <input
+                                type="email"
+                                id="email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                placeholder="Enter your email"
+                                required
+                                disabled={loading}
+                            />
+                        </div>
+
+                        <button
+                            type="submit"
+                            className="btn btn-primary btn-block"
+                            disabled={loading}
+                        >
+                            {loading ? 'Sending...' : 'Send Reset Link'}
+                        </button>
+                    </form>
+
+                    <div className="auth-footer">
+                        <Link to="/login" className="auth-link">
+                            <FaArrowLeft /> Back to Login
+                        </Link>
+                    </div>
+                </motion.div>
+            </div>
         </div>
     );
 };
