@@ -301,12 +301,15 @@ router.post('/onboarding', auth, async (req, res) => {
 router.post('/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
+        console.log('Forgot password request for:', email);
 
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
+            console.log('User not found in database for email:', email);
             return res.status(404).json({ message: 'User with this email does not exist.' });
         }
 
+        console.log('User found:', user.email);
         // Generate reset token
         const resetToken = user.generatePasswordResetToken();
         await user.save();
@@ -319,7 +322,8 @@ router.post('/forgot-password', async (req, res) => {
             return res.status(500).json({ message: 'Error sending reset email. Please try again later.' });
         }
 
-        res.json({ message: 'If an account exists with that email, a password reset link has been sent.' });
+        console.log('Reset email sent successfully to:', user.email);
+        res.json({ message: 'Password reset link has been sent to your email.' });
     } catch (error) {
         console.error('Forgot password error:', error);
         res.status(500).json({ message: error.message });

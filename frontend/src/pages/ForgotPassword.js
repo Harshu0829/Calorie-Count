@@ -18,10 +18,13 @@ const ForgotPassword = () => {
         setError('');
 
         try {
+            console.log('Sending forgot password request for:', email);
             const response = await api.post('/auth/forgot-password', { email });
+            console.log('Response received:', response.data);
             setMessage(response.data.message);
             setEmail('');
         } catch (err) {
+            console.log('Error received:', err.response || err);
             setError(err.response?.data?.message || 'Something went wrong. Please try again.');
         } finally {
             setLoading(false);
