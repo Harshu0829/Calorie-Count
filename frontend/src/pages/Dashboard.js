@@ -155,14 +155,15 @@ const Dashboard = () => {
     const { name, value } = e.target;
     setMealForm(prev => ({
       ...prev,
-      [name]: name === 'portion' ? parseFloat(value) || 0 : value
+      [name]: value
     }));
   };
 
   const handleAddMeal = async () => {
     const description = mealForm.foodName.trim();
+    const portionValue = parseFloat(mealForm.portion) || 0;
 
-    if (!description || mealForm.portion <= 0) {
+    if (!description || portionValue <= 0) {
       alert('Please enter a food name and valid portion amount');
       return;
     }
@@ -173,7 +174,7 @@ const Dashboard = () => {
       // Calculate nutrition for the food
       const calcResponse = await api.post('/foods/calculate', {
         food_name: description,
-        weight_grams: mealForm.portion
+        weight_grams: portionValue
       });
 
       const foodData = calcResponse.data;
@@ -182,7 +183,7 @@ const Dashboard = () => {
       await api.post('/manual-meals', {
         mealType: mealForm.mealType,
         description,
-        portion: mealForm.portion,
+        portion: portionValue,
         nutrition: {
           calories: foodData.calories || 0,
           protein: foodData.protein || 0,
@@ -221,7 +222,9 @@ const Dashboard = () => {
   };
 
   const handleUpdateMeal = async (meal) => {
-    if (!editingMeal.editForm.foodName.trim() || editingMeal.editForm.portion <= 0) {
+    const portionValue = parseFloat(editingMeal.editForm.portion) || 0;
+
+    if (!editingMeal.editForm.foodName.trim() || portionValue <= 0) {
       alert('Please enter a valid food name and portion');
       return;
     }
@@ -232,7 +235,7 @@ const Dashboard = () => {
       // Calculate calories for the updated food
       const calcResponse = await api.post('/foods/calculate', {
         food_name: editingMeal.editForm.foodName.trim(),
-        weight_grams: editingMeal.editForm.portion
+        weight_grams: portionValue
       });
 
       const foodData = calcResponse.data;
@@ -241,7 +244,7 @@ const Dashboard = () => {
         await api.put(`/manual-meals/${meal._id}`, {
           mealType: editingMeal.editForm.mealType,
           description: editingMeal.editForm.foodName.trim(),
-          portion: editingMeal.editForm.portion,
+          portion: portionValue,
           nutrition: {
             calories: foodData.calories || 0,
             protein: foodData.protein || 0,
@@ -254,7 +257,7 @@ const Dashboard = () => {
           mealType: editingMeal.editForm.mealType,
           foods: [{
             foodName: editingMeal.editForm.foodName.trim(),
-            quantity: editingMeal.editForm.portion,
+            quantity: portionValue,
             calories: foodData.calories || 0,
             protein: foodData.protein || 0,
             carbs: foodData.carbs || 0,
@@ -669,7 +672,7 @@ const Dashboard = () => {
                                   value={editingMeal.editForm.portion}
                                   onChange={(e) => setEditingMeal({
                                     ...editingMeal,
-                                    editForm: { ...editingMeal.editForm, portion: parseFloat(e.target.value) || 0 }
+                                    editForm: { ...editingMeal.editForm, portion: e.target.value }
                                   })}
                                   placeholder="Portion (g)"
                                   min="1"
