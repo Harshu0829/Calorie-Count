@@ -43,9 +43,20 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+// Keep-alive component to wake up backend
+function KeepAlive() {
+  React.useEffect(() => {
+    // Simple fetch to wake up the server sans-credentials
+    fetch(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/health`)
+      .catch(err => console.log('Keep-alive ping failed', err));
+  }, []);
+  return null;
+}
+
 function App() {
   return (
     <AuthProvider>
+      <KeepAlive />
       <Router>
         <div className="App">
           <Navbar />
