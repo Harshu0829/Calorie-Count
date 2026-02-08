@@ -3,7 +3,10 @@ const nodemailer = require('nodemailer');
 // Create reusable transporter
 const createTransporter = () => {
     // Check if using Gmail or custom SMTP
-    if (process.env.EMAIL_SERVICE === 'gmail') {
+    // Default to 'gmail' if EMAIL_SERVICE is 'gmail' OR (EMAIL_SERVICE is not set AND SMTP_HOST is not set)
+    const useGmail = process.env.EMAIL_SERVICE === 'gmail' || (!process.env.EMAIL_SERVICE && !process.env.SMTP_HOST);
+
+    if (useGmail) {
         return nodemailer.createTransporter({
             service: 'gmail',
             auth: {
