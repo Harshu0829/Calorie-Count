@@ -8,7 +8,7 @@ const createTransporter = () => {
             service: 'gmail',
             auth: {
                 user: process.env.EMAIL_USER,
-                pass: process.env.EMAIL_APP_PASSWORD // Use App Password, not regular password
+                pass: process.env.EMAIL_PASSWORD // Use App Password
             }
         });
     } else {
@@ -28,9 +28,20 @@ const createTransporter = () => {
 // Send password reset email
 const sendPasswordResetEmail = async (email, resetToken, userName) => {
     try {
-        const transporter = createTransporter();
+        const resetUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/reset-password/${resetToken}`;
 
-        const resetUrl = `${process.env.FRONTEND_URL}/reset-password/${resetToken}`;
+        // DEV FALLBACK: If credentials are missing or default, log to console
+        if (!process.env.EMAIL_USER || process.env.EMAIL_USER === 'your_email@gmail.com') {
+            console.log('================================================');
+            console.log(' 📧 [DEV MODE] Mock Email Service');
+            console.log(` To: ${email}`);
+            console.log(` Subject: Password Reset Request`);
+            console.log(` Link: ${resetUrl}`);
+            console.log('================================================');
+            return { success: true };
+        }
+
+        const transporter = createTransporter();
 
         const mailOptions = {
             from: `"FitTrack" <${process.env.EMAIL_USER}>`,
