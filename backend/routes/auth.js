@@ -12,8 +12,8 @@ router.post('/register', async (req, res) => {
     try {
         const { name, email, password, age, gender, height, weight, activityLevel, medicalHistory } = req.body;
 
-        // Check if user exists
-        const existingUser = await User.findOne({ email });
+        // Check if user exists - case insensitive
+        const existingUser = await User.findOne({ email: email.toLowerCase() });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
@@ -75,15 +75,21 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        // Find user
-        const user = await User.findOne({ email });
+        // Find user - using case-insensitive email check
+        const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
+            console.log('Login failed: User not found for email:', email);
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
         // Check password
+        const startTime = Date.now();
         const isMatch = await user.comparePassword(password);
+        const bcryptTime = Date.now() - startTime;
+        console.log(`Bcrypt compare took: ${bcryptTime}ms`);
+
         if (!isMatch) {
+            console.log('Login failed: Password mismatch for email:', email);
             return res.status(400).json({ message: 'Invalid credentials' });
         }
 
@@ -111,9 +117,9 @@ router.post('/login', async (req, res) => {
                 dailyCarbsGoal: user.dailyCarbsGoal,
                 dailyFatGoal: user.dailyFatGoal,
                 profilePicture: user.profilePicture,
-                weightHistory: user.weightHistory || [],
-                heightHistory: user.heightHistory || [],
-                goalHistory: user.goalHistory || [],
+                weightHistory: (user.weightHistory || []).slice(-10),
+                heightHistory: (user.heightHistory || []).slice(-10),
+                goalHistory: (user.goalHistory || []).slice(-10),
                 hasCompletedOnboarding: user.hasCompletedOnboarding,
                 targetWeight: user.targetWeight,
                 goalType: user.goalType
@@ -145,9 +151,9 @@ router.get('/me', auth, async (req, res) => {
                 profilePicture: user.profilePicture,
                 authProvider: user.authProvider,
                 phoneNumber: user.phoneNumber,
-                weightHistory: user.weightHistory,
-                heightHistory: user.heightHistory,
-                goalHistory: user.goalHistory,
+                weightHistory: (user.weightHistory || []).slice(-50),
+                heightHistory: (user.heightHistory || []).slice(-50),
+                goalHistory: (user.goalHistory || []).slice(-50),
                 hasCompletedOnboarding: user.hasCompletedOnboarding,
                 targetWeight: user.targetWeight,
                 goalType: user.goalType
