@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { FaCalendarAlt, FaFileExport, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -12,6 +13,7 @@ const History = () => {
   const [loading, setLoading] = useState(true);
   const [dailyCalories, setDailyCalories] = useState({});
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
@@ -163,9 +165,14 @@ const History = () => {
           <h1>
             <FaCalendarAlt /> Meal History
           </h1>
-          <button onClick={exportData} className="btn btn-secondary export-btn">
-            <FaFileExport /> Export CSV
-          </button>
+          <div className="header-actions" style={{ display: 'flex', gap: '1rem' }}>
+            <button onClick={() => navigate('/food-history')} className="btn btn-secondary history-link-btn">
+              <FaFileExport /> Detailed Analysis
+            </button>
+            <button onClick={exportData} className="btn btn-secondary export-btn">
+              <FaFileExport /> Export CSV
+            </button>
+          </div>
         </motion.header>
 
         <motion.div

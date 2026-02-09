@@ -14,6 +14,7 @@ import Dashboard from './pages/Dashboard';
 import History from './pages/History';
 import Profile from './pages/Profile';
 import FoodUpload from './pages/FoodUpload';
+import FoodHistory from './pages/FoodHistory';
 import OnboardingWizard from './pages/OnboardingWizard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
@@ -106,6 +107,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <FoodUpload />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/food-history"
+              element={
+                <ProtectedRoute>
+                  <FoodHistory />
                 </ProtectedRoute>
               }
             />
