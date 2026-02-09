@@ -39,11 +39,14 @@ const History = () => {
       // Group meals by date
       const caloriesByDate = {};
       allMeals.forEach(meal => {
+        if (!meal.date) return; // Skip entries without dates
         const dateKey = getLocalDateKey(meal.date);
         if (!caloriesByDate[dateKey]) {
           caloriesByDate[dateKey] = 0;
         }
-        caloriesByDate[dateKey] += (meal.totalCalories || meal.calories || 0);
+        // Use standardized totalCalories field from backend
+        const cal = parseFloat(meal.totalCalories) || 0;
+        caloriesByDate[dateKey] += cal;
       });
 
       setDailyCalories(caloriesByDate);

@@ -112,10 +112,26 @@ router.get('/', async (req, res) => {
 
         // Merge results (optional but good for transition)
         // In a real consolidation, we'd eventually stop using legacyMeals
+        // Standardize entries for the frontend
+        const standardizedEntries = entries.map(entry => {
+            const obj = entry.toObject ? entry.toObject() : entry;
+            obj.totalCalories = entry.calories || 0;
+            obj.totalProtein = entry.protein || 0;
+            obj.totalCarbs = entry.carbs || 0;
+            obj.totalFat = entry.fat || 0;
+            return obj;
+        });
+
+        const standardizedLegacy = legacyMeals.map(meal => {
+            const obj = meal.toObject ? meal.toObject() : meal;
+            // Legacy Meal model already has totalCalories calculated
+            return obj;
+        });
+
         res.json({
-            meals: legacyMeals, // Current frontend expects this
-            entries: entries,    // New system
-            combined: [...entries, ...legacyMeals].sort((a, b) => new Date(b.date) - new Date(a.date))
+            meals: standardizedLegacy,
+            entries: standardizedEntries,
+            combined: [...standardizedEntries, ...standardizedLegacy].sort((a, b) => new Date(b.date) - new Date(a.date))
         });
     } catch (error) {
         console.error('Error in meals GET:', error);
