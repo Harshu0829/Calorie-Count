@@ -207,8 +207,8 @@ const History = () => {
               {Array.from({ length: daysInMonth }).map((_, idx) => {
                 const day = idx + 1;
                 const status = getCalorieStatus(day);
-                const dateKey = getLocalDateKey(new Date(currentYear, currentMonth, day));
-                const calories = dailyCalories[dateKey] || 0;
+                const date = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
+                const calories = dailyCalories[date] || 0;
                 const isSelected = selectedDay === day;
 
                 return (
