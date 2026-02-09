@@ -19,6 +19,14 @@ const History = () => {
   const firstDayOfMonth = new Date(currentYear, currentMonth, 1).getDay();
 
 
+  // Helper to get YYYY-MM-DD in local time
+  const getLocalDateKey = (date) => {
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   const formatManualMeal = (meal) => ({
     ...meal,
@@ -49,22 +57,20 @@ const History = () => {
       const manualMeals = manualResponse.data.manualMeals?.map(formatManualMeal) || [];
       const allMeals = [...trackedMeals, ...manualMeals];
 
-      // Filter meals for current month
-      const startDate = new Date(currentYear, currentMonth, 1);
-      const endDate = new Date(currentYear, currentMonth + 1, 0);
+      // Filter meals for current month (using local time boundaries)
       const mealsData = allMeals.filter(meal => {
         const mealDate = new Date(meal.date);
-        return mealDate >= startDate && mealDate <= endDate;
+        return mealDate.getMonth() === currentMonth && mealDate.getFullYear() === currentYear;
       });
 
-      // Group meals by date
+      // Group meals by date using local date key
       const caloriesByDate = {};
       mealsData.forEach(meal => {
-        const date = new Date(meal.date).toISOString().split('T')[0];
-        if (!caloriesByDate[date]) {
-          caloriesByDate[date] = 0;
+        const dateKey = getLocalDateKey(meal.date);
+        if (!caloriesByDate[dateKey]) {
+          caloriesByDate[dateKey] = 0;
         }
-        caloriesByDate[date] += meal.totalCalories || 0;
+        caloriesByDate[dateKey] += meal.totalCalories || 0;
       });
 
       setDailyCalories(caloriesByDate);
@@ -83,16 +89,15 @@ const History = () => {
   }, [fetchMonthlyMeals]);
 
   const getDateMeals = (day) => {
-    const date = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
+    const targetKey = getLocalDateKey(new Date(currentYear, currentMonth, day));
     return meals.filter(meal => {
-      const mealDate = new Date(meal.date).toISOString().split('T')[0];
-      return mealDate === date;
+      return getLocalDateKey(meal.date) === targetKey;
     });
   };
 
   const getCalorieStatus = (day) => {
-    const date = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
-    const calories = dailyCalories[date] || 0;
+    const dateKey = getLocalDateKey(new Date(currentYear, currentMonth, day));
+    const calories = dailyCalories[dateKey] || 0;
     const goal = user?.dailyCalorieGoal || 2000;
 
     if (calories === 0) return 'none';
@@ -208,8 +213,8 @@ const History = () => {
               {Array.from({ length: daysInMonth }).map((_, idx) => {
                 const day = idx + 1;
                 const status = getCalorieStatus(day);
-                const date = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
-                const calories = dailyCalories[date] || 0;
+                const dateKey = getLocalDateKey(new Date(currentYear, currentMonth, day));
+                const calories = dailyCalories[dateKey] || 0;
                 const isSelected = selectedDay === day;
 
                 return (
