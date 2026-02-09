@@ -23,7 +23,11 @@ function ProtectedRoute({ children }) {
   const location = useLocation();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="app-loading">
+        <div className="spinner"></div>
+      </div>
+    );
   }
 
   if (!user) {
