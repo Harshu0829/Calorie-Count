@@ -17,7 +17,15 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [weeklyStats, setWeeklyStats] = useState([]);
 
-  const [date] = useState(new Date().toISOString().split('T')[0]);
+  // Helper to get YYYY-MM-DD in local time
+  const getLocalDateStr = (d = new Date()) => {
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const [date] = useState(getLocalDateStr());
   const [editingMeal, setEditingMeal] = useState(null);
   const getMealTypeByTime = () => {
     const hour = new Date().getHours();
@@ -140,7 +148,9 @@ const Dashboard = () => {
 
   const formatWeeklyData = () => {
     return weeklyStats.map(stat => {
-      const dateObj = new Date(stat.date);
+      // stat.date is already YYYY-MM-DD from backend
+      const [year, month, day] = stat.date.split('-').map(Number);
+      const dateObj = new Date(year, month - 1, day);
       return {
         ...stat,
         displayDate: dateObj.toLocaleDateString('en-US', { weekday: 'short' })

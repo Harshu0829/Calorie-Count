@@ -113,8 +113,7 @@ const userSchema = new mongoose.Schema({
         default: 'none'
     }
 }, {
-    timestamps: true,
-    bufferCommands: false // Disable buffering for this model
+    timestamps: true
 });
 
 // Hash password before saving

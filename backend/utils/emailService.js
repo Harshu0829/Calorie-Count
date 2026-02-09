@@ -7,7 +7,7 @@ const createTransporter = () => {
     const useGmail = process.env.EMAIL_SERVICE === 'gmail' || (!process.env.EMAIL_SERVICE && !process.env.SMTP_HOST);
 
     if (useGmail) {
-        return nodemailer.createTransporter({
+        return nodemailer.createTransport({
             service: 'gmail',
             auth: {
                 user: process.env.EMAIL_USER,
@@ -16,7 +16,7 @@ const createTransporter = () => {
         });
     } else {
         // Custom SMTP configuration
-        return nodemailer.createTransporter({
+        return nodemailer.createTransport({
             host: process.env.SMTP_HOST,
             port: process.env.SMTP_PORT || 587,
             secure: process.env.SMTP_SECURE === 'true', // true for 465, false for other ports

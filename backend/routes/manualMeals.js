@@ -1,5 +1,5 @@
 const express = require('express');
-const ManualMeal = require('../models/ManualMeal');
+const MealEntry = require('../models/MealEntry');
 const { Food } = require('../models/Food');
 const { calculateCalories } = require('../utils/foodDatabase');
 const auth = require('../middleware/auth');
@@ -25,7 +25,8 @@ const getNutritionData = async (description, portion, providedNutrition = {}) =>
                 calories: +(foodDoc.calories * multiplier).toFixed(1),
                 protein: +(foodDoc.protein * multiplier).toFixed(1),
                 carbs: +(foodDoc.carbs * multiplier).toFixed(1),
-                fat: +(foodDoc.fat * multiplier).toFixed(1)
+                fat: +(foodDoc.fat * multiplier).toFixed(1),
+                micronutrients: foodDoc.micronutrients || { vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 }
             };
         }
 
@@ -34,7 +35,8 @@ const getNutritionData = async (description, portion, providedNutrition = {}) =>
             calories: calculated.calories,
             protein: calculated.protein,
             carbs: calculated.carbs,
-            fat: calculated.fat
+            fat: calculated.fat,
+            micronutrients: calculated.micronutrients || { vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 }
         };
     }
 
@@ -42,7 +44,8 @@ const getNutritionData = async (description, portion, providedNutrition = {}) =>
         calories: 0,
         protein: 0,
         carbs: 0,
-        fat: 0
+        fat: 0,
+        micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 }
     };
 };
 
@@ -58,21 +61,23 @@ router.post('/', async (req, res) => {
         const portionValue = portion || 100;
         const nutritionData = await getNutritionData(description, portionValue, nutrition);
 
-        const manualMeal = new ManualMeal({
+        const mealEntry = new MealEntry({
             user: req.user._id,
             mealType: mealType || 'snack',
-            description,
+            foodName: description,
             portion: portionValue,
             calories: nutritionData.calories,
             protein: nutritionData.protein,
             carbs: nutritionData.carbs,
             fat: nutritionData.fat,
+            micronutrients: nutritionData.micronutrients,
+            entryType: 'manual',
             date: date ? new Date(date) : new Date()
         });
 
-        await manualMeal.save();
+        await mealEntry.save();
 
-        res.status(201).json({ manualMeal });
+        res.status(201).json({ manualMeal: mealEntry });
     } catch (error) {
         console.error('Error creating manual meal:', error);
         res.status(500).json({ message: error.message });
@@ -83,7 +88,7 @@ router.post('/', async (req, res) => {
 router.get('/', async (req, res) => {
     try {
         const { date, mealType } = req.query;
-        const query = { user: req.user._id };
+        const query = { user: req.user._id, entryType: 'manual' };
 
         if (date) {
             const startDate = new Date(date);
@@ -97,8 +102,16 @@ router.get('/', async (req, res) => {
             query.mealType = mealType;
         }
 
-        const manualMeals = await ManualMeal.find(query).sort({ date: -1 });
-        res.json({ manualMeals });
+        const manualMeals = await MealEntry.find(query).sort({ date: -1 });
+
+        // Map foodName to description for legacy frontend compatibility
+        const legacyManualMeals = manualMeals.map(entry => {
+            const obj = entry.toObject ? entry.toObject() : entry;
+            obj.description = entry.foodName;
+            return obj;
+        });
+
+        res.json({ manualMeals: legacyManualMeals });
     } catch (error) {
         console.error('Error fetching manual meals:', error);
         res.status(500).json({ message: error.message });
@@ -108,43 +121,46 @@ router.get('/', async (req, res) => {
 // Update manual meal
 router.put('/:id', async (req, res) => {
     try {
-        const manualMeal = await ManualMeal.findOne({
+        const mealEntry = await MealEntry.findOne({
             _id: req.params.id,
             user: req.user._id
         });
 
-        if (!manualMeal) {
-            return res.status(404).json({ message: 'Manual meal not found' });
+        if (!mealEntry) {
+            return res.status(404).json({ message: 'Meal entry not found' });
         }
 
         const { mealType, description, portion, nutrition, date } = req.body;
 
-        if (mealType) manualMeal.mealType = mealType;
-        if (description) manualMeal.description = description;
-        if (portion !== undefined) manualMeal.portion = portion;
-        if (date) manualMeal.date = new Date(date);
+        if (mealType) mealEntry.mealType = mealType;
+        if (description) mealEntry.foodName = description;
+        if (portion !== undefined) mealEntry.portion = portion;
+        if (date) mealEntry.date = new Date(date);
 
         if (nutrition) {
-            manualMeal.calories = nutrition.calories;
-            manualMeal.protein = nutrition.protein;
-            manualMeal.carbs = nutrition.carbs;
-            manualMeal.fat = nutrition.fat;
+            mealEntry.calories = nutrition.calories;
+            mealEntry.protein = nutrition.protein;
+            mealEntry.carbs = nutrition.carbs;
+            mealEntry.fat = nutrition.fat;
         } else if (description || portion !== undefined) {
             const nutritionData = await getNutritionData(
-                manualMeal.description,
-                manualMeal.portion,
+                mealEntry.foodName,
+                mealEntry.portion,
                 nutrition
             );
-            manualMeal.calories = nutritionData.calories;
-            manualMeal.protein = nutritionData.protein;
-            manualMeal.carbs = nutritionData.carbs;
-            manualMeal.fat = nutritionData.fat;
+            mealEntry.calories = nutritionData.calories;
+            mealEntry.protein = nutritionData.protein;
+            mealEntry.carbs = nutritionData.carbs;
+            mealEntry.fat = nutritionData.fat;
+            if (nutritionData.micronutrients) {
+                mealEntry.micronutrients = nutritionData.micronutrients;
+            }
         }
 
-        await manualMeal.save();
-        res.json({ manualMeal });
+        await mealEntry.save();
+        res.json({ manualMeal: mealEntry });
     } catch (error) {
-        console.error('Error updating manual meal:', error);
+        console.error('Error updating meal entry:', error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -152,23 +168,20 @@ router.put('/:id', async (req, res) => {
 // Delete manual meal
 router.delete('/:id', async (req, res) => {
     try {
-        const manualMeal = await ManualMeal.findOneAndDelete({
+        const mealEntry = await MealEntry.findOneAndDelete({
             _id: req.params.id,
             user: req.user._id
         });
 
-        if (!manualMeal) {
-            return res.status(404).json({ message: 'Manual meal not found' });
+        if (!mealEntry) {
+            return res.status(404).json({ message: 'Meal entry not found' });
         }
 
-        res.json({ message: 'Manual meal deleted successfully' });
+        res.json({ message: 'Meal entry deleted successfully' });
     } catch (error) {
-        console.error('Error deleting manual meal:', error);
+        console.error('Error deleting meal entry:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
 module.exports = router;
-
-
-

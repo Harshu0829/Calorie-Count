@@ -1,5 +1,5 @@
 const Anthropic = require('@anthropic-ai/sdk');
-const FoodAnalysis = require('../models/FoodAnalysis');
+const MealEntry = require('../models/MealEntry');
 
 // Initialize Anthropic client
 const anthropic = new Anthropic({
@@ -92,15 +92,15 @@ exports.analyzeFood = async (req, res) => {
             });
         }
 
-        // Save to database
-        const foodAnalysis = new FoodAnalysis({
+        // Save to unified MealEntry model
+        const mealEntry = new MealEntry({
             user: req.user._id,
             foodName: nutritionData.foodName,
             calories: nutritionData.calories || 0,
             protein: nutritionData.protein || 0,
             carbs: nutritionData.carbs || 0,
             fat: nutritionData.fat || 0,
-            servingSize: nutritionData.servingSize || 100,
+            portion: nutritionData.servingSize || 100,
             micronutrients: {
                 vitaminA: nutritionData.micronutrients?.vitaminA || 0,
                 vitaminC: nutritionData.micronutrients?.vitaminC || 0,
@@ -108,6 +108,7 @@ exports.analyzeFood = async (req, res) => {
                 iron: nutritionData.micronutrients?.iron || 0
             },
             confidence: nutritionData.confidence || 0.8,
+            entryType: 'ai',
             imageMetadata: {
                 originalName: req.file.originalname,
                 size: req.file.size,
@@ -115,12 +116,12 @@ exports.analyzeFood = async (req, res) => {
             }
         });
 
-        await foodAnalysis.save();
+        await mealEntry.save();
 
         res.json({
             success: true,
             message: 'Food analyzed successfully',
-            data: foodAnalysis
+            data: mealEntry
         });
 
     } catch (error) {
@@ -133,7 +134,7 @@ exports.analyzeFood = async (req, res) => {
 };
 
 /**
- * Get user's food history
+ * Get user's food history (filtered for AI entries)
  */
 exports.getFoodHistory = async (req, res) => {
     try {
@@ -143,12 +144,14 @@ exports.getFoodHistory = async (req, res) => {
 
         const { limit = 20, skip = 0 } = req.query;
 
-        const foodHistory = await FoodAnalysis.find({ user: req.user._id })
-            .sort({ createdAt: -1 })
+        // We could return ALL entries here, but current UI expects AI analysis history.
+        // For consolidation, we'll keep it to AI entries to match existing Page expectation.
+        const foodHistory = await MealEntry.find({ user: req.user._id, entryType: 'ai' })
+            .sort({ date: -1, createdAt: -1 })
             .limit(parseInt(limit))
             .skip(parseInt(skip));
 
-        const total = await FoodAnalysis.countDocuments({ user: req.user._id });
+        const total = await MealEntry.countDocuments({ user: req.user._id, entryType: 'ai' });
 
         res.json({
             success: true,
@@ -170,7 +173,7 @@ exports.getFoodHistory = async (req, res) => {
 };
 
 /**
- * Get daily nutritional totals
+ * Get daily nutritional totals across ALL entry types
  */
 exports.getDailyTotals = async (req, res) => {
     try {
@@ -185,12 +188,12 @@ exports.getDailyTotals = async (req, res) => {
         const endOfDay = new Date();
         endOfDay.setHours(23, 59, 59, 999);
 
-        // Aggregate today's totals
-        const totals = await FoodAnalysis.aggregate([
+        // Aggregate ALL entries for today (Manual + AI + Search)
+        const totals = await MealEntry.aggregate([
             {
                 $match: {
                     user: req.user._id,
-                    createdAt: { $gte: startOfDay, $lte: endOfDay }
+                    date: { $gte: startOfDay, $lte: endOfDay }
                 }
             },
             {
@@ -249,7 +252,7 @@ exports.getDailyTotals = async (req, res) => {
 };
 
 /**
- * Delete a food entry
+ * Delete a meal entry
  */
 exports.deleteFoodEntry = async (req, res) => {
     try {
@@ -259,26 +262,26 @@ exports.deleteFoodEntry = async (req, res) => {
 
         const { id } = req.params;
 
-        const foodEntry = await FoodAnalysis.findOne({
+        const entry = await MealEntry.findOne({
             _id: id,
             user: req.user._id
         });
 
-        if (!foodEntry) {
-            return res.status(404).json({ message: 'Food entry not found' });
+        if (!entry) {
+            return res.status(404).json({ message: 'Entry not found' });
         }
 
-        await FoodAnalysis.deleteOne({ _id: id });
+        await MealEntry.deleteOne({ _id: id });
 
         res.json({
             success: true,
-            message: 'Food entry deleted successfully'
+            message: 'Entry deleted successfully'
         });
 
     } catch (error) {
-        console.error('Error deleting food entry:', error);
+        console.error('Error deleting entry:', error);
         res.status(500).json({
-            message: 'Error deleting food entry',
+            message: 'Error deleting entry',
             error: error.message
         });
     }

@@ -31,9 +31,13 @@ export const AuthProvider = ({ children }) => {
       const response = await api.get('/auth/me');
       setUser(response.data.user);
     } catch (error) {
-      localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
-      setUser(null);
+      console.error('Fetch user error:', error);
+      // Only clear session if it's an authentication error (401 or 403)
+      if (error.response && [401, 403].includes(error.response.status)) {
+        localStorage.removeItem('token');
+        delete api.defaults.headers.common['Authorization'];
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
@@ -53,10 +57,15 @@ export const AuthProvider = ({ children }) => {
 
       return { success: true };
     } catch (error) {
-      console.error('Login error:', error);
+      const message = error.response?.data?.message || error.message || 'Login failed';
+      console.error('Detailed login error:', {
+        status: error.response?.status,
+        data: error.response?.data,
+        message: error.message
+      });
       return {
         success: false,
-        message: error.response?.data?.detail || error.response?.data?.message || 'Login failed'
+        message: message
       };
     }
   };
