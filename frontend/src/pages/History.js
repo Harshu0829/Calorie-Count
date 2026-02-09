@@ -20,22 +20,6 @@ const History = () => {
 
 
 
-  const formatManualMeal = (meal) => ({
-    ...meal,
-    isManual: true,
-    totalCalories: meal.calories || 0,
-    totalProtein: meal.protein || 0,
-    totalCarbs: meal.carbs || 0,
-    totalFat: meal.fat || 0,
-    foods: [{
-      foodName: meal.description,
-      quantity: meal.portion,
-      calories: meal.calories || 0,
-      protein: meal.protein || 0,
-      carbs: meal.carbs || 0,
-      fat: meal.fat || 0
-    }]
-  });
 
   const fetchMonthlyMeals = useCallback(async () => {
     try {
