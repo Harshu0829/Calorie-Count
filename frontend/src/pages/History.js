@@ -21,40 +21,33 @@ const History = () => {
 
 
 
-  // Helper to get YYYY-MM-DD in local time
-  const getLocalDateKey = (date) => {
-    const d = new Date(date);
-    const year = d.getFullYear();
-    const month = String(d.getMonth() + 1).padStart(2, '0');
-    const day = String(d.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
   const fetchMonthlyMeals = useCallback(async () => {
     try {
       setLoading(true);
       const res = await api.get('/meals');
       const allMeals = res.data.combined || [];
 
-      // Group meals by date
+      // Filter meals for current month (standardized main branch logic)
+      const startDate = new Date(currentYear, currentMonth, 1);
+      const endDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
+
+      const mealsData = allMeals.filter(meal => {
+        const mealDate = new Date(meal.date);
+        return mealDate >= startDate && mealDate <= endDate;
+      });
+
+      // Group meals by date using main branch logic (toISOString)
       const caloriesByDate = {};
-      allMeals.forEach(meal => {
-        // Robust date extraction
-        const mDate = meal.date || meal.createdAt;
-        if (!mDate) return;
-
-        const dateKey = getLocalDateKey(mDate);
-        if (!caloriesByDate[dateKey]) {
-          caloriesByDate[dateKey] = 0;
+      mealsData.forEach(meal => {
+        const date = new Date(meal.date).toISOString().split('T')[0];
+        if (!caloriesByDate[date]) {
+          caloriesByDate[date] = 0;
         }
-
-        // Sum using both possible field names for resilience
-        const cal = parseFloat(meal.totalCalories) || parseFloat(meal.calories) || 0;
-        caloriesByDate[dateKey] += cal;
+        caloriesByDate[date] += (meal.totalCalories || meal.calories || 0);
       });
 
       setDailyCalories(caloriesByDate);
-      setMeals(allMeals);
+      setMeals(mealsData);
     } catch (error) {
       console.error('Error fetching monthly meals:', error);
       setDailyCalories({});
@@ -62,23 +55,23 @@ const History = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentMonth, currentYear]);
 
   useEffect(() => {
     fetchMonthlyMeals();
   }, [fetchMonthlyMeals]);
 
   const getDateMeals = (day) => {
-    const targetDateKey = getLocalDateKey(new Date(currentYear, currentMonth, day));
+    const date = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
     return meals.filter(meal => {
-      const mealDateKey = getLocalDateKey(meal.date);
-      return mealDateKey === targetDateKey;
+      const mealDate = new Date(meal.date).toISOString().split('T')[0];
+      return mealDate === date;
     });
   };
 
   const getCalorieStatus = (day) => {
-    const dateKey = getLocalDateKey(new Date(currentYear, currentMonth, day));
-    const calories = dailyCalories[dateKey] || 0;
+    const date = new Date(currentYear, currentMonth, day).toISOString().split('T')[0];
+    const calories = dailyCalories[date] || 0;
     const goal = user?.dailyCalorieGoal || 2000;
 
     if (calories === 0) return 'none';
