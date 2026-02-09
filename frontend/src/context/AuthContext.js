@@ -31,9 +31,13 @@ export const AuthProvider = ({ children }) => {
       const response = await api.get('/auth/me');
       setUser(response.data.user);
     } catch (error) {
-      localStorage.removeItem('token');
-      delete api.defaults.headers.common['Authorization'];
-      setUser(null);
+      console.error('Fetch user error:', error);
+      // Only clear session if it's an authentication error (401 or 403)
+      if (error.response && [401, 403].includes(error.response.status)) {
+        localStorage.removeItem('token');
+        delete api.defaults.headers.common['Authorization'];
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }

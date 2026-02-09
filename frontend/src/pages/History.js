@@ -40,35 +40,21 @@ const History = () => {
   const fetchMonthlyMeals = useCallback(async () => {
     try {
       setLoading(true);
-      const [trackedResponse, manualResponse] = await Promise.all([
-        api.get('/meals').catch(() => ({ data: { meals: [] } })),
-        api.get('/manual-meals').catch(() => ({ data: { manualMeals: [] } }))
-      ]);
-
-      const trackedMeals = trackedResponse.data.meals || [];
-      const manualMeals = manualResponse.data.manualMeals?.map(formatManualMeal) || [];
-      const allMeals = [...trackedMeals, ...manualMeals];
-
-      // Filter meals for current month
-      const startDate = new Date(currentYear, currentMonth, 1);
-      const endDate = new Date(currentYear, currentMonth + 1, 0);
-      const mealsData = allMeals.filter(meal => {
-        const mealDate = new Date(meal.date);
-        return mealDate >= startDate && mealDate <= endDate;
-      });
+      const res = await api.get('/meals');
+      const allMeals = res.data.combined || [];
 
       // Group meals by date
       const caloriesByDate = {};
-      mealsData.forEach(meal => {
+      allMeals.forEach(meal => {
         const date = new Date(meal.date).toISOString().split('T')[0];
         if (!caloriesByDate[date]) {
           caloriesByDate[date] = 0;
         }
-        caloriesByDate[date] += meal.totalCalories || 0;
+        caloriesByDate[date] += (meal.totalCalories || meal.calories || 0);
       });
 
       setDailyCalories(caloriesByDate);
-      setMeals(mealsData);
+      setMeals(allMeals);
     } catch (error) {
       console.error('Error fetching monthly meals:', error);
       setDailyCalories({});
@@ -76,7 +62,7 @@ const History = () => {
     } finally {
       setLoading(false);
     }
-  }, [currentMonth, currentYear]);
+  }, []);
 
   useEffect(() => {
     fetchMonthlyMeals();
@@ -124,18 +110,31 @@ const History = () => {
   const exportData = () => {
     const csvContent = [
       ['Date', 'Meal Type', 'Food', 'Quantity (g)', 'Calories', 'Protein (g)', 'Carbs (g)', 'Fat (g)'],
-      ...meals.flatMap(meal =>
-        meal.foods.map(food => [
-          new Date(meal.date).toLocaleDateString(),
-          meal.mealType,
-          food.foodName,
-          food.quantity,
-          food.calories,
-          food.protein,
-          food.carbs,
-          food.fat
-        ])
-      )
+      ...meals.flatMap(meal => {
+        if (meal.foods && meal.foods.length > 0) {
+          return meal.foods.map(food => [
+            new Date(meal.date).toLocaleDateString(),
+            meal.mealType,
+            food.foodName,
+            food.quantity,
+            food.calories,
+            food.protein,
+            food.carbs,
+            food.fat
+          ]);
+        } else {
+          return [[
+            new Date(meal.date).toLocaleDateString(),
+            meal.mealType,
+            meal.foodName,
+            meal.portion,
+            meal.calories,
+            meal.protein,
+            meal.carbs,
+            meal.fat
+          ]];
+        }
+      })
     ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -272,7 +271,8 @@ const History = () => {
                   <div className="meal-header">
                     <div className="meal-header-title">
                       <h3>{meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}</h3>
-                      {meal.isManual && <span className="manual-tag small">Manual Entry</span>}
+                      {meal.entryType === 'manual' && <span className="manual-tag small">Manual Entry</span>}
+                      {meal.entryType === 'ai' && <span className="ai-tag small">AI Analysis</span>}
                     </div>
                     <span className="meal-time">
                       {new Date(meal.date).toLocaleTimeString('en-US', {
@@ -282,20 +282,39 @@ const History = () => {
                     </span>
                   </div>
                   <div className="meal-foods">
-                    {meal.foods.map((food, idx) => (
-                      <div key={idx} className="food-item">
-                        <span className="food-name">{food.foodName}</span>
+                    {meal.foods && meal.foods.length > 0 ? (
+                      meal.foods.map((food, idx) => (
+                        <div key={idx} className="food-item">
+                          <span className="food-name">{food.foodName}</span>
+                          <span className="food-details">
+                            {food.quantity}g • {Math.round(food.calories)} kcal
+                          </span>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="food-item">
+                        <span className="food-name">{meal.foodName}</span>
                         <span className="food-details">
-                          {food.quantity}g • {Math.round(food.calories)} kcal
+                          {meal.portion}g • {Math.round(meal.calories)} kcal
                         </span>
                       </div>
-                    ))}
+                    )}
                   </div>
                   <div className="meal-total">
-                    Total: {Math.round(meal.totalCalories)} kcal
+                    Total: {Math.round(meal.totalCalories || meal.calories)} kcal
                     {' • '}
-                    P: {Math.round(meal.totalProtein)}g • C: {Math.round(meal.totalCarbs)}g • F: {Math.round(meal.totalFat)}g
+                    P: {Math.round(meal.totalProtein || meal.protein)}g • C: {Math.round(meal.totalCarbs || meal.carbs)}g • F: {Math.round(meal.totalFat || meal.fat)}g
                   </div>
+                  {meal.micronutrients && (
+                    <div className="meal-micronutrients small" style={{ marginTop: '5px', opacity: 0.8, fontSize: '0.85em' }}>
+                      Vit A: {meal.micronutrients.vitaminA} • Vit C: {meal.micronutrients.vitaminC} • Ca: {meal.micronutrients.calcium} • Fe: {meal.micronutrients.iron}
+                    </div>
+                  )}
+                  {meal.confidence < 1 && (
+                    <div className="confidence-label small" style={{ marginTop: '5px', fontStyle: 'italic' }}>
+                      AI Confidence: {Math.round(meal.confidence * 100)}%
+                    </div>
+                  )}
                 </div>
               ))}
             </div>

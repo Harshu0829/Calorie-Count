@@ -5,10 +5,25 @@ const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { sendPasswordResetEmail } = require('../utils/emailService');
 
+const rateLimit = require('express-rate-limit');
+
 const router = express.Router();
 
+// Rate limiters
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 requests per windowMs
+    message: { message: 'Too many requests from this IP, please try again after 15 minutes' }
+});
+
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5, // Limit login specifically to 5 attempts
+    message: { message: 'Too many login attempts, please try again after 15 minutes' }
+});
+
 // Register
-router.post('/register', async (req, res) => {
+router.post('/register', authLimiter, async (req, res) => {
     try {
         const { name, email, password, age, gender, height, weight, activityLevel, medicalHistory } = req.body;
 
@@ -36,7 +51,7 @@ router.post('/register', async (req, res) => {
         // Generate token
         const token = jwt.sign(
             { userId: user._id },
-            process.env.JWT_SECRET || 'your_jwt_secret_key_here',
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -71,7 +86,7 @@ router.post('/register', async (req, res) => {
 });
 
 // Login
-router.post('/login', async (req, res) => {
+router.post('/login', loginLimiter, async (req, res) => {
     try {
         const { email, password } = req.body;
 
@@ -96,7 +111,7 @@ router.post('/login', async (req, res) => {
         // Generate token
         const token = jwt.sign(
             { userId: user._id },
-            process.env.JWT_SECRET || 'your_jwt_secret_key_here',
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 
@@ -406,7 +421,7 @@ router.post('/google', async (req, res) => {
         // Generate token
         const token = jwt.sign(
             { userId: user._id },
-            process.env.JWT_SECRET || 'your_jwt_secret_key_here',
+            process.env.JWT_SECRET,
             { expiresIn: '7d' }
         );
 

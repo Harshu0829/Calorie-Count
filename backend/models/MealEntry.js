@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const manualMealSchema = new mongoose.Schema({
+const mealEntrySchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User',
@@ -11,7 +11,7 @@ const manualMealSchema = new mongoose.Schema({
         enum: ['breakfast', 'lunch', 'dinner', 'snack'],
         default: 'snack'
     },
-    description: {
+    foodName: {
         type: String,
         required: true,
         trim: true
@@ -41,6 +41,28 @@ const manualMealSchema = new mongoose.Schema({
         default: 0,
         min: 0
     },
+    micronutrients: {
+        vitaminA: { type: Number, default: 0 },
+        vitaminC: { type: Number, default: 0 },
+        calcium: { type: Number, default: 0 },
+        iron: { type: Number, default: 0 }
+    },
+    entryType: {
+        type: String,
+        enum: ['manual', 'ai', 'search'],
+        default: 'manual'
+    },
+    confidence: {
+        type: Number,
+        min: 0,
+        max: 1,
+        default: 1 // Manual entries have 100% confidence by default
+    },
+    imageMetadata: {
+        originalName: String,
+        size: Number,
+        mimeType: String
+    },
     date: {
         type: Date,
         default: Date.now
@@ -49,7 +71,7 @@ const manualMealSchema = new mongoose.Schema({
     timestamps: true
 });
 
-module.exports = mongoose.model('ManualMeal', manualMealSchema);
+// Index for efficient queries by user and date
+mealEntrySchema.index({ user: 1, date: -1 });
 
-
-
+module.exports = mongoose.model('MealEntry', mealEntrySchema);

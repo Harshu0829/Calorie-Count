@@ -29,8 +29,17 @@ const upload = multer({
 // All routes require authentication
 router.use(protect);
 
+const rateLimit = require('express-rate-limit');
+
+// Rate limiter for AI analysis (expensive)
+const analyzeLimiter = rateLimit({
+    windowMs: 60 * 60 * 1000, // 1 hour
+    max: 20, // Limit each IP to 20 analysis requests per hour
+    message: { message: 'Too many food analysis requests, please try again after an hour' }
+});
+
 // POST /api/food/analyze - Upload and analyze food image
-router.post('/analyze', upload.single('image'), analyzeFood);
+router.post('/analyze', analyzeLimiter, upload.single('image'), analyzeFood);
 
 // GET /api/food/history - Get user's food analysis history
 router.get('/history', getFoodHistory);

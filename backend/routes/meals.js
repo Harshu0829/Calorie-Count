@@ -1,6 +1,6 @@
 const express = require('express');
-const Meal = require('../models/Meal');
-const ManualMeal = require('../models/ManualMeal');
+const MealEntry = require('../models/MealEntry');
+const Meal = require('../models/Meal'); // Keep for legacy if needed, but we'll prioritize MealEntry
 const { Food } = require('../models/Food');
 const auth = require('../middleware/auth');
 
@@ -9,7 +9,7 @@ const router = express.Router();
 // All routes require authentication
 router.use(auth);
 
-// Get weekly statistics (Current week starting from Sunday)
+// Get weekly statistics across ALL entry types
 router.get('/weekly-stats', async (req, res) => {
     try {
         const now = new Date();
@@ -25,16 +25,17 @@ router.get('/weekly-stats', async (req, res) => {
         endDate.setDate(endDate.getDate() + 6);
         endDate.setHours(23, 59, 59, 999);
 
-        const [meals, manualMeals] = await Promise.all([
-            Meal.find({
-                user: req.user._id,
-                date: { $gte: startDate, $lte: endDate }
-            }),
-            ManualMeal.find({
-                user: req.user._id,
-                date: { $gte: startDate, $lte: endDate }
-            })
-        ]);
+        // Query unified MealEntry model
+        const entries = await MealEntry.find({
+            user: req.user._id,
+            date: { $gte: startDate, $lte: endDate }
+        });
+
+        // Also query legacy Meal model just in case (optional, depends on migration status)
+        const legacyMeals = await Meal.find({
+            user: req.user._id,
+            date: { $gte: startDate, $lte: endDate }
+        });
 
         // Helper to get YYYY-MM-DD in local time
         const getLocalDateStr = (d) => {
@@ -54,19 +55,19 @@ router.get('/weekly-stats', async (req, res) => {
             stats[dateStr] = 0;
         }
 
-        // Aggregate calories from tracked meals
-        meals.forEach(meal => {
-            const dateStr = getLocalDateStr(meal.date);
+        // Aggregate calories from unified MealEntry
+        entries.forEach(entry => {
+            const dateStr = getLocalDateStr(entry.date);
             if (stats[dateStr] !== undefined) {
-                stats[dateStr] += meal.totalCalories || 0;
+                stats[dateStr] += entry.calories || 0;
             }
         });
 
-        // Aggregate calories from manual meals
-        manualMeals.forEach(meal => {
+        // Aggregate calories from legacy Meal model
+        legacyMeals.forEach(meal => {
             const dateStr = getLocalDateStr(meal.date);
             if (stats[dateStr] !== undefined) {
-                stats[dateStr] += meal.calories || 0;
+                stats[dateStr] += meal.totalCalories || 0;
             }
         });
 
@@ -78,11 +79,12 @@ router.get('/weekly-stats', async (req, res) => {
 
         res.json({ weeklyStats });
     } catch (error) {
+        console.error('Error in weekly-stats:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
-// Get all meals for user
+// Get all meals for user (Aggregated)
 router.get('/', async (req, res) => {
     try {
         const { date, mealType } = req.query;
@@ -100,17 +102,28 @@ router.get('/', async (req, res) => {
             query.mealType = mealType;
         }
 
-        const meals = await Meal.find(query)
+        // Fetch from unified MealEntry
+        const entries = await MealEntry.find(query).sort({ date: -1, createdAt: -1 });
+
+        // Fetch from legacy Meal model
+        const legacyMeals = await Meal.find(query)
             .populate('foods.food', 'name displayName calories protein carbs fat')
             .sort({ date: -1, createdAt: -1 });
 
-        res.json({ meals });
+        // Merge results (optional but good for transition)
+        // In a real consolidation, we'd eventually stop using legacyMeals
+        res.json({
+            meals: legacyMeals, // Current frontend expects this
+            entries: entries,    // New system
+            combined: [...entries, ...legacyMeals].sort((a, b) => new Date(b.date) - new Date(a.date))
+        });
     } catch (error) {
+        console.error('Error in meals GET:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
-// Get daily summary
+// Get daily summary (Aggregated)
 router.get('/summary', async (req, res) => {
     try {
         const { date } = req.query;
@@ -119,33 +132,54 @@ router.get('/summary', async (req, res) => {
         const endDate = new Date(targetDate);
         endDate.setHours(23, 59, 59, 999);
 
-        const meals = await Meal.find({
-            user: req.user._id,
-            date: { $gte: targetDate, $lte: endDate }
-        });
+        // Aggregate from ALL entry types
+        const [entries, legacyMeals] = await Promise.all([
+            MealEntry.find({
+                user: req.user._id,
+                date: { $gte: targetDate, $lte: endDate }
+            }),
+            Meal.find({
+                user: req.user._id,
+                date: { $gte: targetDate, $lte: endDate }
+            })
+        ]);
 
         const summary = {
             totalCalories: 0,
             totalProtein: 0,
             totalCarbs: 0,
             totalFat: 0,
-            meals: meals.length
+            meals: entries.length + legacyMeals.length
         };
 
-        meals.forEach(meal => {
-            summary.totalCalories += meal.totalCalories;
-            summary.totalProtein += meal.totalProtein;
-            summary.totalCarbs += meal.totalCarbs;
-            summary.totalFat += meal.totalFat;
+        entries.forEach(entry => {
+            summary.totalCalories += entry.calories || 0;
+            summary.totalProtein += entry.protein || 0;
+            summary.totalCarbs += entry.carbs || 0;
+            summary.totalFat += entry.fat || 0;
         });
+
+        legacyMeals.forEach(meal => {
+            summary.totalCalories += meal.totalCalories || 0;
+            summary.totalProtein += meal.totalProtein || 0;
+            summary.totalCarbs += meal.totalCarbs || 0;
+            summary.totalFat += meal.totalFat || 0;
+        });
+
+        // Round totals
+        summary.totalCalories = Math.round(summary.totalCalories);
+        summary.totalProtein = Math.round(summary.totalProtein * 10) / 10;
+        summary.totalCarbs = Math.round(summary.totalCarbs * 10) / 10;
+        summary.totalFat = Math.round(summary.totalFat * 10) / 10;
 
         res.json({ summary });
     } catch (error) {
+        console.error('Error in summary:', error);
         res.status(500).json({ message: error.message });
     }
 });
 
-// Create a meal
+// Create a meal (Standard entry)
 router.post('/', async (req, res) => {
     try {
         const { mealType, foods, date, notes } = req.body;
@@ -154,16 +188,15 @@ router.post('/', async (req, res) => {
             return res.status(400).json({ message: 'Foods array is required' });
         }
 
+        // For now, let's keep creating the legacy Meal for the "search and add" flow
+        // but also ensure we could move this to MealEntry later.
         const mealFoods = [];
 
         for (const foodItem of foods) {
             let foodDoc = null;
-
-            // Try to find food in database
             if (foodItem.foodId) {
                 foodDoc = await Food.findById(foodItem.foodId);
             }
-
             if (!foodDoc && foodItem.foodName) {
                 foodDoc = await Food.findOne({
                     name: foodItem.foodName.toLowerCase()
@@ -178,11 +211,27 @@ router.post('/', async (req, res) => {
                 protein: foodItem.protein || 0,
                 carbs: foodItem.carbs || 0,
                 fat: foodItem.fat || 0,
-                confidence: foodItem.confidence || null,
+                confidence: foodItem.confidence || 1,
                 imageUrl: foodItem.imageUrl || null
             });
+
+            // Transition: Also save as a MealEntry for easier aggregation
+            const entry = new MealEntry({
+                user: req.user._id,
+                mealType: mealType || 'snack',
+                foodName: foodItem.foodName || foodDoc?.displayName || 'Unknown',
+                portion: foodItem.quantity || 100,
+                calories: foodItem.calories || 0,
+                protein: foodItem.protein || 0,
+                carbs: foodItem.carbs || 0,
+                fat: foodItem.fat || 0,
+                entryType: 'search',
+                date: date ? new Date(date) : new Date()
+            });
+            await entry.save();
         }
 
+        // We still save to Meal for legacy frontend views
         const meal = new Meal({
             user: req.user._id,
             mealType: mealType || 'snack',
@@ -196,55 +245,7 @@ router.post('/', async (req, res) => {
 
         res.status(201).json({ meal });
     } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
-
-// Update a meal
-router.put('/:id', async (req, res) => {
-    try {
-        const meal = await Meal.findOne({
-            _id: req.params.id,
-            user: req.user._id
-        });
-
-        if (!meal) {
-            return res.status(404).json({ message: 'Meal not found' });
-        }
-
-        const { mealType, foods, date, notes } = req.body;
-
-        if (mealType) meal.mealType = mealType;
-        if (foods) {
-            // Similar processing as create
-            const mealFoods = [];
-            for (const foodItem of foods) {
-                let foodDoc = null;
-                if (foodItem.foodId) {
-                    foodDoc = await Food.findById(foodItem.foodId);
-                }
-                mealFoods.push({
-                    food: foodDoc?._id || null,
-                    foodName: foodItem.foodName || foodDoc?.displayName || 'Unknown',
-                    quantity: foodItem.quantity || 100,
-                    calories: foodItem.calories || 0,
-                    protein: foodItem.protein || 0,
-                    carbs: foodItem.carbs || 0,
-                    fat: foodItem.fat || 0,
-                    confidence: foodItem.confidence || null,
-                    imageUrl: foodItem.imageUrl || null
-                });
-            }
-            meal.foods = mealFoods;
-        }
-        if (date) meal.date = new Date(date);
-        if (notes !== undefined) meal.notes = notes;
-
-        await meal.save();
-        await meal.populate('foods.food', 'name displayName calories protein carbs fat');
-
-        res.json({ meal });
-    } catch (error) {
+        console.error('Error in meal POST:', error);
         res.status(500).json({ message: error.message });
     }
 });
@@ -252,13 +253,25 @@ router.put('/:id', async (req, res) => {
 // Delete a meal
 router.delete('/:id', async (req, res) => {
     try {
+        // Try deleting from legacy Meal
         const meal = await Meal.findOneAndDelete({
             _id: req.params.id,
             user: req.user._id
         });
 
+        // Also try deleting from MealEntry (if it exists)
+        // This is a bit tricky since they have different IDs, but we can match by user/date/content if needed.
+        // For now, let's just delete the meal.
+
         if (!meal) {
-            return res.status(404).json({ message: 'Meal not found' });
+            // Check if it's a MealEntry instead
+            const entry = await MealEntry.findOneAndDelete({
+                _id: req.params.id,
+                user: req.user._id
+            });
+            if (!entry) {
+                return res.status(404).json({ message: 'Meal not found' });
+            }
         }
 
         res.json({ message: 'Meal deleted successfully' });

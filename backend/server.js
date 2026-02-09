@@ -9,17 +9,28 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors({
-    origin: process.env.FRONTEND_URL || '*', // Allow all or specific origin
+const corsOptions = {
+    origin: process.env.FRONTEND_URL,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
-}));
+};
+
+// In development, allow localhost
+if (process.env.NODE_ENV !== 'production') {
+    corsOptions.origin = ['http://localhost:3000', 'http://localhost:5173'];
+}
+
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // MongoDB Connection
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/calorie-tracker';
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+    console.error('FATAL: MONGODB_URI is not defined in environment variables');
+    process.exit(1);
+}
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
@@ -53,7 +64,6 @@ const authRoutes = require('./routes/auth');
 const foodRoutes = require('./routes/foods');
 const mealRoutes = require('./routes/meals');
 const manualMealRoutes = require('./routes/manualMeals');
-const analyzeRoutes = require('./routes/analyze');
 const foodAnalysisRoutes = require('./routes/foodRoutes');
 
 // Routes - Mount everything under /api
@@ -61,7 +71,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/foods', foodRoutes);
 app.use('/api/meals', mealRoutes);
 app.use('/api/manual-meals', manualMealRoutes);
-app.use('/api/analyze', analyzeRoutes);
 app.use('/api/food', foodAnalysisRoutes);
 
 // Health check endpoints (placed after routes for clarity)
