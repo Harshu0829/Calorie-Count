@@ -31,14 +31,90 @@ if (!MONGODB_URI) {
     console.error('FATAL: MONGODB_URI is not defined in environment variables');
     process.exit(1);
 }
+const runMigration = async () => {
+    try {
+        const db = mongoose.connection.db;
+        const MealEntry = require('./models/MealEntry');
+
+        // 1. Migrate FoodAnalysis -> MealEntry
+        const foodAnalysisColl = db.collection('foodanalyses');
+        const legacyAI = await foodAnalysisColl.find({}).toArray();
+
+        if (legacyAI.length > 0) {
+            console.log(`Migrating ${legacyAI.length} AI analysis entries...`);
+            for (const entry of legacyAI) {
+                const exists = await MealEntry.findOne({
+                    user: entry.user,
+                    date: entry.date,
+                    foodName: entry.foodName,
+                    calories: entry.calories
+                });
+
+                if (!exists) {
+                    await MealEntry.create({
+                        user: entry.user,
+                        mealType: 'snack',
+                        foodName: entry.foodName,
+                        portion: entry.servingSize || 100,
+                        calories: entry.calories || 0,
+                        protein: entry.protein || 0,
+                        carbs: entry.carbs || 0,
+                        fat: entry.fat || 0,
+                        micronutrients: entry.micronutrients || {},
+                        entryType: 'ai',
+                        confidence: entry.confidence || 0.8,
+                        date: entry.date
+                    });
+                }
+            }
+            console.log('AI migration complete.');
+        }
+
+        // 2. Migrate ManualMeal -> MealEntry
+        const manualMealColl = db.collection('manualmeals');
+        const legacyManual = await manualMealColl.find({}).toArray();
+
+        if (legacyManual.length > 0) {
+            console.log(`Migrating ${legacyManual.length} manual meal entries...`);
+            for (const entry of legacyManual) {
+                const exists = await MealEntry.findOne({
+                    user: entry.user,
+                    date: entry.date,
+                    foodName: entry.description,
+                    calories: entry.calories
+                });
+
+                if (!exists) {
+                    await MealEntry.create({
+                        user: entry.user,
+                        mealType: entry.mealType || 'snack',
+                        foodName: entry.description,
+                        portion: entry.portion || 100,
+                        calories: entry.calories || 0,
+                        protein: entry.protein || 0,
+                        carbs: entry.carbs || 0,
+                        fat: entry.fat || 0,
+                        entryType: 'manual',
+                        date: entry.date
+                    });
+                }
+            }
+            console.log('Manual migration complete.');
+        }
+    } catch (err) {
+        console.error('Migration error:', err);
+    }
+};
+
 mongoose.connect(MONGODB_URI, {
     useNewUrlParser: true,
     useUnifiedTopology: true,
-    maxPoolSize: 10, // Maintain up to 10 socket connections
-    serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds
-    socketTimeoutMS: 45000, // Close sockets after 45 seconds of inactivity
+    maxPoolSize: 10,
 })
-    .then(() => console.log('MongoDB Connected'))
+    .then(() => {
+        console.log('MongoDB Connected');
+        runMigration();
+    })
     .catch(err => console.error('MongoDB connection error:', err));
 
 // Multer configuration for file uploads
