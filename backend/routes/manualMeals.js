@@ -103,7 +103,15 @@ router.get('/', async (req, res) => {
         }
 
         const manualMeals = await MealEntry.find(query).sort({ date: -1 });
-        res.json({ manualMeals });
+
+        // Map foodName to description for legacy frontend compatibility
+        const legacyManualMeals = manualMeals.map(entry => {
+            const obj = entry.toObject ? entry.toObject() : entry;
+            obj.description = entry.foodName;
+            return obj;
+        });
+
+        res.json({ manualMeals: legacyManualMeals });
     } catch (error) {
         console.error('Error fetching manual meals:', error);
         res.status(500).json({ message: error.message });

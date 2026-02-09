@@ -112,36 +112,40 @@ router.get('/', async (req, res) => {
 
         // Merge results (optional but good for transition)
         // In a real consolidation, we'd eventually stop using legacyMeals
-        // Standardize entries for the frontend
+        // Standardize entries for the legacy frontend structure
         const standardizedEntries = entries.map(entry => {
-            const obj = entry.toObject ? entry.toObject() : entry;
-            // Ensure both 'calories' and 'totalCalories' are available
-            obj.totalCalories = entry.calories || 0;
-            obj.totalProtein = entry.protein || 0;
-            obj.totalCarbs = entry.carbs || 0;
-            obj.totalFat = entry.fat || 0;
-            // Ensure mealType and date are present
-            obj.mealType = entry.mealType || 'snack';
-            obj.date = entry.date || entry.createdAt;
-            return obj;
+            return {
+                _id: entry._id,
+                user: entry.user,
+                mealType: entry.mealType || 'snack',
+                date: entry.date,
+                totalCalories: entry.calories || 0,
+                totalProtein: entry.protein || 0,
+                totalCarbs: entry.carbs || 0,
+                totalFat: entry.fat || 0,
+                foods: [{
+                    foodId: null,
+                    foodName: entry.foodName,
+                    quantity: entry.portion,
+                    calories: entry.calories || 0,
+                    protein: entry.protein || 0,
+                    carbs: entry.carbs || 0,
+                    fat: entry.fat || 0,
+                    confidence: entry.confidence || 1
+                }],
+                entryType: entry.entryType,
+                createdAt: entry.createdAt
+            };
         });
 
         const standardizedLegacy = legacyMeals.map(meal => {
             const obj = meal.toObject ? meal.toObject() : meal;
-            // Ensure legacy meals also follow the pattern
-            obj.totalCalories = meal.totalCalories || 0;
-            obj.totalProtein = meal.totalProtein || 0;
-            obj.totalCarbs = meal.totalCarbs || 0;
-            obj.totalFat = meal.totalFat || 0;
-            obj.mealType = meal.mealType || 'snack';
-            obj.date = meal.date || meal.createdAt;
+            // Legacy Meal model already has totalCalories calculated
             return obj;
         });
 
         res.json({
-            meals: standardizedLegacy,
-            entries: standardizedEntries,
-            combined: [...standardizedEntries, ...standardizedLegacy].sort((a, b) => new Date(b.date) - new Date(a.date))
+            meals: [...standardizedEntries, ...standardizedLegacy].sort((a, b) => new Date(b.date) - new Date(a.date))
         });
     } catch (error) {
         console.error('Error in meals GET:', error);

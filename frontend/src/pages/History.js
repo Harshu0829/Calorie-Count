@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { FaCalendarAlt, FaFileExport, FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -13,7 +12,6 @@ const History = () => {
   const [loading, setLoading] = useState(true);
   const [dailyCalories, setDailyCalories] = useState({});
   const { user } = useAuth();
-  const navigate = useNavigate();
 
   const currentMonth = selectedDate.getMonth();
   const currentYear = selectedDate.getFullYear();
@@ -22,30 +20,51 @@ const History = () => {
 
 
 
+  const formatManualMeal = (meal) => ({
+    ...meal,
+    isManual: true,
+    totalCalories: meal.calories || 0,
+    totalProtein: meal.protein || 0,
+    totalCarbs: meal.carbs || 0,
+    totalFat: meal.fat || 0,
+    foods: [{
+      foodName: meal.description,
+      quantity: meal.portion,
+      calories: meal.calories || 0,
+      protein: meal.protein || 0,
+      carbs: meal.carbs || 0,
+      fat: meal.fat || 0
+    }]
+  });
 
   const fetchMonthlyMeals = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await api.get('/meals');
-      const allMeals = res.data.combined || [];
+      const [trackedResponse, manualResponse] = await Promise.all([
+        api.get('/meals').catch(() => ({ data: { meals: [] } })),
+        api.get('/manual-meals').catch(() => ({ data: { manualMeals: [] } }))
+      ]);
 
-      // Filter meals for current month (standardized main branch logic)
+      const trackedMeals = trackedResponse.data.meals || [];
+      const manualMeals = manualResponse.data.manualMeals?.map(formatManualMeal) || [];
+      const allMeals = [...trackedMeals, ...manualMeals];
+
+      // Filter meals for current month
       const startDate = new Date(currentYear, currentMonth, 1);
-      const endDate = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59);
-
+      const endDate = new Date(currentYear, currentMonth + 1, 0);
       const mealsData = allMeals.filter(meal => {
         const mealDate = new Date(meal.date);
         return mealDate >= startDate && mealDate <= endDate;
       });
 
-      // Group meals by date using main branch logic (toISOString)
+      // Group meals by date
       const caloriesByDate = {};
       mealsData.forEach(meal => {
         const date = new Date(meal.date).toISOString().split('T')[0];
         if (!caloriesByDate[date]) {
           caloriesByDate[date] = 0;
         }
-        caloriesByDate[date] += (meal.totalCalories || meal.calories || 0);
+        caloriesByDate[date] += meal.totalCalories || 0;
       });
 
       setDailyCalories(caloriesByDate);
@@ -105,31 +124,18 @@ const History = () => {
   const exportData = () => {
     const csvContent = [
       ['Date', 'Meal Type', 'Food', 'Quantity (g)', 'Calories', 'Protein (g)', 'Carbs (g)', 'Fat (g)'],
-      ...meals.flatMap(meal => {
-        if (meal.foods && meal.foods.length > 0) {
-          return meal.foods.map(food => [
-            new Date(meal.date).toLocaleDateString(),
-            meal.mealType,
-            food.foodName,
-            food.quantity,
-            food.calories,
-            food.protein,
-            food.carbs,
-            food.fat
-          ]);
-        } else {
-          return [[
-            new Date(meal.date).toLocaleDateString(),
-            meal.mealType,
-            meal.foodName,
-            meal.portion,
-            meal.calories,
-            meal.protein,
-            meal.carbs,
-            meal.fat
-          ]];
-        }
-      })
+      ...meals.flatMap(meal =>
+        meal.foods.map(food => [
+          new Date(meal.date).toLocaleDateString(),
+          meal.mealType,
+          food.foodName,
+          food.quantity,
+          food.calories,
+          food.protein,
+          food.carbs,
+          food.fat
+        ])
+      )
     ].map(row => row.join(',')).join('\n');
 
     const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -165,14 +171,9 @@ const History = () => {
           <h1>
             <FaCalendarAlt /> Meal History
           </h1>
-          <div className="header-actions" style={{ display: 'flex', gap: '1rem' }}>
-            <button onClick={() => navigate('/food-history')} className="btn btn-secondary history-link-btn">
-              <FaFileExport /> Detailed Analysis
-            </button>
-            <button onClick={exportData} className="btn btn-secondary export-btn">
-              <FaFileExport /> Export CSV
-            </button>
-          </div>
+          <button onClick={exportData} className="btn btn-secondary export-btn">
+            <FaFileExport /> Export CSV
+          </button>
         </motion.header>
 
         <motion.div
@@ -271,8 +272,7 @@ const History = () => {
                   <div className="meal-header">
                     <div className="meal-header-title">
                       <h3>{meal.mealType.charAt(0).toUpperCase() + meal.mealType.slice(1)}</h3>
-                      {meal.entryType === 'manual' && <span className="manual-tag small">Manual Entry</span>}
-                      {meal.entryType === 'ai' && <span className="ai-tag small">AI Analysis</span>}
+                      {meal.isManual && <span className="manual-tag small">Manual Entry</span>}
                     </div>
                     <span className="meal-time">
                       {new Date(meal.date).toLocaleTimeString('en-US', {
@@ -282,39 +282,20 @@ const History = () => {
                     </span>
                   </div>
                   <div className="meal-foods">
-                    {meal.foods && meal.foods.length > 0 ? (
-                      meal.foods.map((food, idx) => (
-                        <div key={idx} className="food-item">
-                          <span className="food-name">{food.foodName}</span>
-                          <span className="food-details">
-                            {food.quantity}g • {Math.round(food.calories)} kcal
-                          </span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="food-item">
-                        <span className="food-name">{meal.foodName}</span>
+                    {meal.foods.map((food, idx) => (
+                      <div key={idx} className="food-item">
+                        <span className="food-name">{food.foodName}</span>
                         <span className="food-details">
-                          {meal.portion}g • {Math.round(meal.calories)} kcal
+                          {food.quantity}g • {Math.round(food.calories)} kcal
                         </span>
                       </div>
-                    )}
+                    ))}
                   </div>
                   <div className="meal-total">
-                    Total: {Math.round(meal.totalCalories || meal.calories)} kcal
+                    Total: {Math.round(meal.totalCalories)} kcal
                     {' • '}
-                    P: {Math.round(meal.totalProtein || meal.protein)}g • C: {Math.round(meal.totalCarbs || meal.carbs)}g • F: {Math.round(meal.totalFat || meal.fat)}g
+                    P: {Math.round(meal.totalProtein)}g • C: {Math.round(meal.totalCarbs)}g • F: {Math.round(meal.totalFat)}g
                   </div>
-                  {meal.micronutrients && (
-                    <div className="meal-micronutrients small" style={{ marginTop: '5px', opacity: 0.8, fontSize: '0.85em' }}>
-                      Vit A: {meal.micronutrients.vitaminA} • Vit C: {meal.micronutrients.vitaminC} • Ca: {meal.micronutrients.calcium} • Fe: {meal.micronutrients.iron}
-                    </div>
-                  )}
-                  {meal.confidence < 1 && (
-                    <div className="confidence-label small" style={{ marginTop: '5px', fontStyle: 'italic' }}>
-                      AI Confidence: {Math.round(meal.confidence * 100)}%
-                    </div>
-                  )}
                 </div>
               ))}
             </div>
