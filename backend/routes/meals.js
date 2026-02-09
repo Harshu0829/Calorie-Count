@@ -115,16 +115,26 @@ router.get('/', async (req, res) => {
         // Standardize entries for the frontend
         const standardizedEntries = entries.map(entry => {
             const obj = entry.toObject ? entry.toObject() : entry;
+            // Ensure both 'calories' and 'totalCalories' are available
             obj.totalCalories = entry.calories || 0;
             obj.totalProtein = entry.protein || 0;
             obj.totalCarbs = entry.carbs || 0;
             obj.totalFat = entry.fat || 0;
+            // Ensure mealType and date are present
+            obj.mealType = entry.mealType || 'snack';
+            obj.date = entry.date || entry.createdAt;
             return obj;
         });
 
         const standardizedLegacy = legacyMeals.map(meal => {
             const obj = meal.toObject ? meal.toObject() : meal;
-            // Legacy Meal model already has totalCalories calculated
+            // Ensure legacy meals also follow the pattern
+            obj.totalCalories = meal.totalCalories || 0;
+            obj.totalProtein = meal.totalProtein || 0;
+            obj.totalCarbs = meal.totalCarbs || 0;
+            obj.totalFat = meal.totalFat || 0;
+            obj.mealType = meal.mealType || 'snack';
+            obj.date = meal.date || meal.createdAt;
             return obj;
         });
 
