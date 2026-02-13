@@ -93,7 +93,7 @@ function estimateWeight(foodName) {
 /**
  * Calculate nutrition. Tries local database first, then AI.
  */
-async function calculateFoodNutrition(foodName, weightGrams) {
+async function calculateFoodNutrition(foodName, weightGrams, foodState = 'cooked') {
     const foodNameLower = foodName.toLowerCase().replace(/\s+/g, '_');
 
     // Try to find exact or fuzzy match in local database first
@@ -130,12 +130,13 @@ async function calculateFoodNutrition(foodName, weightGrams) {
 
     // If not found, use AI service
     try {
-        console.log(`Food "${foodName}" not found in local DB. Calling AI...`);
-        const aiData = await aiService.getNutritionalInfoFromText(foodName, weightGrams);
+        console.log(`Food "${foodName}" not found in local DB. Calling AI with state "${foodState}"...`);
+        const aiData = await aiService.getNutritionalInfoFromText(foodName, weightGrams, foodState);
 
         return {
             food: aiData.foodName || foodName,
             weight_grams: weightGrams,
+            foodState: foodState,
             calories: aiData.calories || 0,
             protein: aiData.protein || 0,
             carbs: aiData.carbs || 0,

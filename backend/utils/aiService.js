@@ -9,9 +9,10 @@ const anthropic = new Anthropic({
  * Get nutritional information from text description using Claude
  * @param {string} foodName - Name or description of the food
  * @param {number} weightGrams - Weight of the portion in grams
+ * @param {string} foodState - State of the food ('raw' or 'cooked')
  * @returns {Promise<Object>} Nutritional data
  */
-exports.getNutritionalInfoFromText = async (foodName, weightGrams) => {
+exports.getNutritionalInfoFromText = async (foodName, weightGrams, foodState = 'cooked') => {
     try {
         const message = await anthropic.messages.create({
             model: "claude-3-5-sonnet-20241022",
@@ -19,7 +20,7 @@ exports.getNutritionalInfoFromText = async (foodName, weightGrams) => {
             messages: [
                 {
                     role: "user",
-                    content: `Analyze this food description: "${foodName}" for a portion of ${weightGrams}g. 
+                    content: `Analyze this food description: "${foodName}" which is in a "${foodState}" state, for a portion of ${weightGrams}g. 
                     Provide nutritional information. Return ONLY a valid JSON object with this exact structure (no additional text):
 {
   "foodName": "name of the food",
