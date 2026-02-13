@@ -102,6 +102,9 @@ router.get('/', async (req, res) => {
             query.mealType = mealType;
         }
 
+        // Exclude manual entries as they are fetched via the dedicated manual-meals API
+        query.entryType = { $ne: 'manual' };
+
         // Fetch from unified MealEntry
         const entries = await MealEntry.find(query).sort({ date: -1, createdAt: -1 });
 
@@ -166,7 +169,8 @@ router.get('/summary', async (req, res) => {
         const [entries, legacyMeals] = await Promise.all([
             MealEntry.find({
                 user: req.user._id,
-                date: { $gte: targetDate, $lte: endDate }
+                date: { $gte: targetDate, $lte: endDate },
+                entryType: { $ne: 'manual' }
             }),
             Meal.find({
                 user: req.user._id,

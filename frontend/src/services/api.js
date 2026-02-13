@@ -14,6 +14,7 @@ const api = axios.create({
 // Add token to requests dynamically using interceptor
 api.interceptors.request.use(
   (config) => {
+    console.log(`API Request: ${config.method.toUpperCase()} ${config.baseURL}${config.url}`);
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -21,6 +22,20 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    return Promise.reject(error);
+  }
+);
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error Response:', {
+      message: error.message,
+      baseUrl: error.config?.baseURL,
+      url: error.config?.url,
+      status: error.response?.status,
+      data: error.response?.data
+    });
     return Promise.reject(error);
   }
 );
