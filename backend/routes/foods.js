@@ -1,6 +1,6 @@
 const express = require('express');
 const { Food } = require('../models/Food');
-const { getAllFoodNames, getFoodDatabase, calculateCalories } = require('../utils/foodDatabase');
+const { getAllFoodNames, getFoodDatabase, calculateFoodNutrition } = require('../utils/foodDatabase');
 
 const router = express.Router();
 
@@ -38,7 +38,7 @@ router.get('/names', (req, res) => {
 });
 
 // Calculate calories for specific food
-router.post('/calculate', (req, res) => {
+router.post('/calculate', async (req, res) => {
     try {
         const { food_name, weight_grams } = req.body;
 
@@ -46,7 +46,7 @@ router.post('/calculate', (req, res) => {
             return res.status(400).json({ message: 'food_name and weight_grams are required' });
         }
 
-        const result = calculateCalories(food_name, parseFloat(weight_grams));
+        const result = await calculateFoodNutrition(food_name, parseFloat(weight_grams));
         res.json(result);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -75,4 +75,3 @@ router.get('/search', async (req, res) => {
 });
 
 module.exports = router;
-

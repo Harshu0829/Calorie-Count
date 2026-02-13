@@ -1,4 +1,6 @@
 // Food database with calories per 100g
+const aiService = require('./aiService');
+
 const FOOD_DATABASE = {
     apple: { calories: 52, protein: 0.3, carbs: 14, fat: 0.2, category: 'fruit', micronutrients: { vitaminA: 54, vitaminC: 4.6, calcium: 6, iron: 0.1 } },
     banana: { calories: 89, protein: 1.1, carbs: 23, fat: 0.3, category: 'fruit', micronutrients: { vitaminA: 64, vitaminC: 8.7, calcium: 5, iron: 0.3 } },
@@ -15,6 +17,11 @@ const FOOD_DATABASE = {
     potato: { calories: 77, protein: 2, carbs: 17, fat: 0.1, category: 'vegetable', micronutrients: { vitaminA: 2, vitaminC: 19.7, calcium: 12, iron: 0.8 } },
     carrot: { calories: 41, protein: 0.9, carbs: 10, fat: 0.2, category: 'vegetable', micronutrients: { vitaminA: 16706, vitaminC: 5.9, calcium: 33, iron: 0.3 } },
     tomato: { calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, category: 'vegetable', micronutrients: { vitaminA: 833, vitaminC: 13.7, calcium: 10, iron: 0.3 } },
+    strawberry: { calories: 32, protein: 0.7, carbs: 7.7, fat: 0.3, category: 'fruit', micronutrients: { vitaminA: 12, vitaminC: 58.8, calcium: 16, iron: 0.4 } },
+    paneer: { calories: 265, protein: 18.3, carbs: 3.6, fat: 20.8, category: 'dairy', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 480, iron: 0 } },
+    dal_tadka: { calories: 150, protein: 7, carbs: 20, fat: 5, category: 'protein', micronutrients: { vitaminA: 100, vitaminC: 2, calcium: 30, iron: 1.5 } },
+    roti: { calories: 120, protein: 3, carbs: 25, fat: 0.5, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 15, iron: 1.2 } },
+    chicken_curry: { calories: 240, protein: 25, carbs: 8, fat: 12, category: 'protein', micronutrients: { vitaminA: 150, vitaminC: 5, calcium: 25, iron: 1.8 } },
     spinach: { calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, category: 'vegetable', micronutrients: { vitaminA: 9377, vitaminC: 28.1, calcium: 99, iron: 2.7 } },
     chicken_thigh: { calories: 209, protein: 26, carbs: 0, fat: 10, category: 'protein', micronutrients: { vitaminA: 18, vitaminC: 0, calcium: 12, iron: 0.9 } },
     beef: { calories: 250, protein: 26, carbs: 0, fat: 17, category: 'protein', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 18, iron: 2.6 } },
@@ -39,6 +46,11 @@ const BASE_WEIGHTS = {
     potato: 173,
     carrot: 61,
     tomato: 123,
+    strawberry: 150,
+    paneer: 100,
+    dal_tadka: 200,
+    roti: 40,
+    chicken_curry: 250,
     spinach: 100,
     chicken_thigh: 100,
     beef: 100,
@@ -49,7 +61,6 @@ const BASE_WEIGHTS = {
 // Simple food detection (in production, use ML model)
 function detectFoodInImage(imageBuffer) {
     // Placeholder: In real implementation, use food recognition ML model
-    // For now, we'll return a simple detection based on random selection
     const foodsToCheck = ['apple', 'banana', 'chicken_breast', 'rice', 'bread', 'egg'];
     const detectedFoods = [];
 
@@ -79,49 +90,76 @@ function estimateWeight(foodName) {
     return BASE_WEIGHTS[foodName.toLowerCase()] || 100;
 }
 
-function calculateCalories(foodName, weightGrams) {
-    const foodNameLower = foodName.toLowerCase();
+/**
+ * Calculate nutrition. Tries local database first, then AI.
+ */
+async function calculateFoodNutrition(foodName, weightGrams) {
+    const foodNameLower = foodName.toLowerCase().replace(/\s+/g, '_');
 
-    // Try to find exact match first
+    // Try to find exact or fuzzy match in local database first
     let foodData = null;
     for (const [key, value] of Object.entries(FOOD_DATABASE)) {
-        if (foodNameLower.includes(key) || key.includes(foodNameLower)) {
+        if (foodNameLower === key || foodNameLower.includes(key) || key.includes(foodNameLower)) {
             foodData = value;
             break;
         }
     }
 
-    if (!foodData) {
-        // Default values if food not found
-        foodData = {
+    // If found in local database, calculate and return
+    if (foodData) {
+        const multiplier = weightGrams / 100.0;
+        const micronutrients = foodData.micronutrients || { vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 };
+
+        return {
+            food: foodName,
+            weight_grams: Math.round(weightGrams * 10) / 10,
+            calories: Math.round(foodData.calories * multiplier * 10) / 10,
+            protein: Math.round(foodData.protein * multiplier * 10) / 10,
+            carbs: Math.round(foodData.carbs * multiplier * 10) / 10,
+            fat: Math.round(foodData.fat * multiplier * 10) / 10,
+            category: foodData.category || 'other',
+            micronutrients: {
+                vitaminA: Math.round(micronutrients.vitaminA * multiplier * 10) / 10,
+                vitaminC: Math.round(micronutrients.vitaminC * multiplier * 10) / 10,
+                calcium: Math.round(micronutrients.calcium * multiplier * 10) / 10,
+                iron: Math.round(micronutrients.iron * multiplier * 10) / 10
+            },
+            dataSource: 'local'
+        };
+    }
+
+    // If not found, use AI service
+    try {
+        console.log(`Food "${foodName}" not found in local DB. Calling AI...`);
+        const aiData = await aiService.getNutritionalInfoFromText(foodName, weightGrams);
+
+        return {
+            food: aiData.foodName || foodName,
+            weight_grams: weightGrams,
+            calories: aiData.calories || 0,
+            protein: aiData.protein || 0,
+            carbs: aiData.carbs || 0,
+            fat: aiData.fat || 0,
+            category: 'other',
+            micronutrients: aiData.micronutrients || { vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 },
+            dataSource: 'ai',
+            confidence: aiData.confidence || 0.7
+        };
+    } catch (error) {
+        console.error('AI estimation failed, falling back to defaults:', error);
+        // Final fallback to defaults if AI fails
+        return {
+            food: foodName,
+            weight_grams: weightGrams,
             calories: 100,
             protein: 5,
             carbs: 15,
             fat: 3,
-            micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 }
+            category: 'other',
+            micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 },
+            dataSource: 'fallback'
         };
     }
-
-    // Calculate per serving
-    const multiplier = weightGrams / 100.0;
-
-    const micronutrients = foodData.micronutrients || { vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 };
-
-    return {
-        food: foodName,
-        weight_grams: Math.round(weightGrams * 10) / 10,
-        calories: Math.round(foodData.calories * multiplier * 10) / 10,
-        protein: Math.round(foodData.protein * multiplier * 10) / 10,
-        carbs: Math.round(foodData.carbs * multiplier * 10) / 10,
-        fat: Math.round(foodData.fat * multiplier * 10) / 10,
-        category: foodData.category || 'other',
-        micronutrients: {
-            vitaminA: Math.round(micronutrients.vitaminA * multiplier * 10) / 10,
-            vitaminC: Math.round(micronutrients.vitaminC * multiplier * 10) / 10,
-            calcium: Math.round(micronutrients.calcium * multiplier * 10) / 10,
-            iron: Math.round(micronutrients.iron * multiplier * 10) / 10
-        }
-    };
 }
 
 function getFoodDatabase() {
@@ -137,7 +175,7 @@ module.exports = {
     BASE_WEIGHTS,
     detectFoodInImage,
     estimateWeight,
-    calculateCalories,
+    calculateFoodNutrition,
     getFoodDatabase,
     getAllFoodNames
 };

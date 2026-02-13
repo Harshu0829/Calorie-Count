@@ -1,10 +1,5 @@
-const Anthropic = require('@anthropic-ai/sdk');
 const MealEntry = require('../models/MealEntry');
-
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-    apiKey: process.env.ANTHROPIC_API_KEY
-});
+const aiService = require('../utils/aiService');
 
 /**
  * Analyze food image using Claude Vision API
@@ -23,66 +18,8 @@ exports.analyzeFood = async (req, res) => {
         const base64Image = req.file.buffer.toString('base64');
         const mimeType = req.file.mimetype;
 
-        // Call Claude Vision API
-        const message = await anthropic.messages.create({
-            model: "claude-3-5-sonnet-20241022",
-            max_tokens: 1024,
-            messages: [
-                {
-                    role: "user",
-                    content: [
-                        {
-                            type: "image",
-                            source: {
-                                type: "base64",
-                                media_type: mimeType,
-                                data: base64Image,
-                            },
-                        },
-                        {
-                            type: "text",
-                            text: `Analyze this food image and provide nutritional information. Return ONLY a valid JSON object with this exact structure (no additional text):
-{
-  "foodName": "name of the food",
-  "calories": number,
-  "protein": number (in grams),
-  "carbs": number (in grams),
-  "fat": number (in grams),
-  "servingSize": number (in grams),
-  "micronutrients": {
-    "vitaminA": number (in mcg),
-    "vitaminC": number (in mg),
-    "calcium": number (in mg),
-    "iron": number (in mg)
-  },
-  "confidence": number (0-1)
-}`
-                        }
-                    ],
-                },
-            ],
-        });
-
-        // Parse Claude's response
-        const responseText = message.content[0].text;
-
-        // Extract JSON from response (handle potential markdown code blocks)
-        let nutritionData;
-        try {
-            // Try to find JSON in the response
-            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-                nutritionData = JSON.parse(jsonMatch[0]);
-            } else {
-                nutritionData = JSON.parse(responseText);
-            }
-        } catch (parseError) {
-            console.error('Failed to parse Claude response:', responseText);
-            return res.status(500).json({
-                message: 'Failed to parse AI response',
-                rawResponse: responseText
-            });
-        }
+        // Call AI Service for image analysis
+        const nutritionData = await aiService.analyzeFoodImage(base64Image, mimeType);
 
         // Validate required fields
         if (!nutritionData.foodName || !nutritionData.calories) {
