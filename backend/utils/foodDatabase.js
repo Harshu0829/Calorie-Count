@@ -23,6 +23,8 @@ const FOOD_DATABASE = {
     roti: { calories: 120, protein: 3, carbs: 25, fat: 0.5, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 15, iron: 1.2 } },
     chicken_curry: { calories: 240, protein: 25, carbs: 8, fat: 12, category: 'protein', micronutrients: { vitaminA: 150, vitaminC: 5, calcium: 25, iron: 1.8 } },
     spinach: { calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, category: 'vegetable', micronutrients: { vitaminA: 9377, vitaminC: 28.1, calcium: 99, iron: 2.7 } },
+    soya_chunks: { calories: 345, protein: 52, carbs: 33, fat: 0.5, category: 'protein', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 350, iron: 20 } },
+    boiled_soya_chunks: { calories: 135, protein: 17.5, carbs: 11.5, fat: 1.2, category: 'protein', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 120, iron: 7 } },
     chicken_thigh: { calories: 209, protein: 26, carbs: 0, fat: 10, category: 'protein', micronutrients: { vitaminA: 18, vitaminC: 0, calcium: 12, iron: 0.9 } },
     beef: { calories: 250, protein: 26, carbs: 0, fat: 17, category: 'protein', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 18, iron: 2.6 } },
     pork: { calories: 242, protein: 27, carbs: 0, fat: 14, category: 'protein', micronutrients: { vitaminA: 2, vitaminC: 0.6, calcium: 19, iron: 0.9 } },
@@ -52,6 +54,8 @@ const BASE_WEIGHTS = {
     roti: 40,
     chicken_curry: 250,
     spinach: 100,
+    soya_chunks: 100,
+    boiled_soya_chunks: 100,
     chicken_thigh: 100,
     beef: 100,
     pork: 100,
@@ -98,10 +102,22 @@ async function calculateFoodNutrition(foodName, weightGrams, foodState = 'cooked
 
     // Try to find exact or fuzzy match in local database first
     let foodData = null;
-    for (const [key, value] of Object.entries(FOOD_DATABASE)) {
-        if (foodNameLower === key || foodNameLower.includes(key) || key.includes(foodNameLower)) {
-            foodData = value;
-            break;
+    let searchKey = foodNameLower;
+
+    // Handle common aliases
+    if (searchKey === 'soya') searchKey = 'soya_chunks';
+
+    // 1. Try exact match with state prefix
+    const statePrefix = foodState === 'raw' ? 'raw_' : 'boiled_';
+    foodData = FOOD_DATABASE[statePrefix + searchKey] || FOOD_DATABASE[searchKey];
+
+    // 2. Fuzzy match if no exact match
+    if (!foodData) {
+        for (const [key, value] of Object.entries(FOOD_DATABASE)) {
+            if (searchKey.includes(key) || key.includes(searchKey)) {
+                foodData = value;
+                break;
+            }
         }
     }
 
@@ -152,12 +168,12 @@ async function calculateFoodNutrition(foodName, weightGrams, foodState = 'cooked
         return {
             food: foodName,
             weight_grams: weightGrams,
-            calories: 100,
-            protein: 5,
-            carbs: 15,
-            fat: 3,
+            calories: 135,
+            protein: 17.5,
+            carbs: 11.5,
+            fat: 1.2,
             category: 'other',
-            micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 },
+            micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 30, iron: 1.5 },
             dataSource: 'fallback'
         };
     }
