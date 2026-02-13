@@ -1,4 +1,4 @@
-const Anthropic = require('@anthropic-ai/sdk');
+// Verification script for Gemini-backed AI service
 require('dotenv').config();
 const aiService = require('../utils/aiService');
 
