@@ -52,6 +52,11 @@ const mealEntrySchema = new mongoose.Schema({
         enum: ['manual', 'ai', 'search'],
         default: 'manual'
     },
+    foodState: {
+        type: String,
+        enum: ['raw', 'cooked'],
+        default: 'cooked'
+    },
     confidence: {
         type: Number,
         min: 0,

@@ -1,7 +1,7 @@
 const express = require('express');
 const MealEntry = require('../models/MealEntry');
 const { Food } = require('../models/Food');
-const { calculateCalories } = require('../utils/foodDatabase');
+const { calculateFoodNutrition } = require('../utils/foodDatabase');
 const auth = require('../middleware/auth');
 
 const router = express.Router();
@@ -10,7 +10,7 @@ const router = express.Router();
 router.use(auth);
 
 // Helper to calculate nutrition if not provided
-const getNutritionData = async (description, portion, providedNutrition = {}) => {
+const getNutritionData = async (description, portion, providedNutrition = {}, foodState = 'cooked') => {
     if (providedNutrition.calories !== undefined) {
         return providedNutrition;
     }
@@ -30,7 +30,7 @@ const getNutritionData = async (description, portion, providedNutrition = {}) =>
             };
         }
 
-        const calculated = calculateCalories(foodName, portion);
+        const calculated = await calculateFoodNutrition(foodName, portion, foodState);
         return {
             calories: calculated.calories,
             protein: calculated.protein,
@@ -49,23 +49,24 @@ const getNutritionData = async (description, portion, providedNutrition = {}) =>
     };
 };
 
-// Create manual meal
 router.post('/', async (req, res) => {
     try {
-        const { mealType, description, portion, nutrition, date } = req.body;
+        const { mealType, description, portion, nutrition, date, foodState } = req.body;
 
         if (!description) {
             return res.status(400).json({ message: 'Description is required' });
         }
 
         const portionValue = portion || 100;
-        const nutritionData = await getNutritionData(description, portionValue, nutrition);
+        const stateValue = foodState || 'cooked';
+        const nutritionData = await getNutritionData(description, portionValue, nutrition, stateValue);
 
         const mealEntry = new MealEntry({
             user: req.user._id,
             mealType: mealType || 'snack',
             foodName: description,
             portion: portionValue,
+            foodState: stateValue,
             calories: nutritionData.calories,
             protein: nutritionData.protein,
             carbs: nutritionData.carbs,
@@ -130,11 +131,12 @@ router.put('/:id', async (req, res) => {
             return res.status(404).json({ message: 'Meal entry not found' });
         }
 
-        const { mealType, description, portion, nutrition, date } = req.body;
+        const { mealType, description, portion, nutrition, date, foodState } = req.body;
 
         if (mealType) mealEntry.mealType = mealType;
         if (description) mealEntry.foodName = description;
         if (portion !== undefined) mealEntry.portion = portion;
+        if (foodState) mealEntry.foodState = foodState;
         if (date) mealEntry.date = new Date(date);
 
         if (nutrition) {
@@ -142,11 +144,12 @@ router.put('/:id', async (req, res) => {
             mealEntry.protein = nutrition.protein;
             mealEntry.carbs = nutrition.carbs;
             mealEntry.fat = nutrition.fat;
-        } else if (description || portion !== undefined) {
+        } else if (description || portion !== undefined || foodState) {
             const nutritionData = await getNutritionData(
                 mealEntry.foodName,
                 mealEntry.portion,
-                nutrition
+                nutrition,
+                mealEntry.foodState
             );
             mealEntry.calories = nutritionData.calories;
             mealEntry.protein = nutritionData.protein;

@@ -38,7 +38,8 @@ const Dashboard = () => {
   const [mealForm, setMealForm] = useState({
     mealType: getMealTypeByTime(),
     foodName: '',
-    portion: 100
+    portion: 100,
+    foodState: 'cooked'
   });
   const [submitting, setSubmitting] = useState(false);
   const { user: authUser } = useAuth();
@@ -184,7 +185,8 @@ const Dashboard = () => {
       // Calculate nutrition for the food
       const calcResponse = await api.post('/foods/calculate', {
         food_name: description,
-        weight_grams: portionValue
+        weight_grams: portionValue,
+        foodState: mealForm.foodState
       });
 
       const foodData = calcResponse.data;
@@ -200,6 +202,7 @@ const Dashboard = () => {
           carbs: foodData.carbs || 0,
           fat: foodData.fat || 0
         },
+        foodState: mealForm.foodState,
         date: new Date().toISOString()
       });
 
@@ -207,7 +210,8 @@ const Dashboard = () => {
       setMealForm({
         mealType: getMealTypeByTime(),
         foodName: '',
-        portion: 100
+        portion: 100,
+        foodState: 'cooked'
       });
 
       // Refresh dashboard data
@@ -226,7 +230,8 @@ const Dashboard = () => {
       editForm: {
         mealType: meal.mealType,
         foodName: meal.foods[0]?.foodName || '',
-        portion: meal.foods[0]?.quantity || 100
+        portion: meal.foods[0]?.quantity || 100,
+        foodState: meal.foodState || 'cooked'
       }
     });
   };
@@ -245,7 +250,8 @@ const Dashboard = () => {
       // Calculate calories for the updated food
       const calcResponse = await api.post('/foods/calculate', {
         food_name: editingMeal.editForm.foodName.trim(),
-        weight_grams: portionValue
+        weight_grams: portionValue,
+        foodState: editingMeal.editForm.foodState
       });
 
       const foodData = calcResponse.data;
@@ -260,7 +266,8 @@ const Dashboard = () => {
             protein: foodData.protein || 0,
             carbs: foodData.carbs || 0,
             fat: foodData.fat || 0
-          }
+          },
+          foodState: editingMeal.editForm.foodState
         });
       } else {
         await api.put(`/meals/${meal._id}`, {
@@ -441,6 +448,19 @@ const Dashboard = () => {
                 min="1"
                 className="form-control"
               />
+            </div>
+            <div className="form-group">
+              <label htmlFor="foodState">State</label>
+              <select
+                id="foodState"
+                name="foodState"
+                value={mealForm.foodState}
+                onChange={handleMealInputChange}
+                className="form-control"
+              >
+                <option value="raw">Raw</option>
+                <option value="cooked">Cooked</option>
+              </select>
             </div>
             <button
               onClick={handleAddMeal}
@@ -688,6 +708,17 @@ const Dashboard = () => {
                                   min="1"
                                   className="form-control form-control-sm"
                                 />
+                                <select
+                                  value={editingMeal.editForm.foodState}
+                                  onChange={(e) => setEditingMeal({
+                                    ...editingMeal,
+                                    editForm: { ...editingMeal.editForm, foodState: e.target.value }
+                                  })}
+                                  className="form-control form-control-sm"
+                                >
+                                  <option value="raw">Raw</option>
+                                  <option value="cooked">Cooked</option>
+                                </select>
                               </div>
                               <div className="edit-form-actions">
                                 <button
@@ -717,7 +748,7 @@ const Dashboard = () => {
                                 {meal.isManual && <span className="manual-tag">Manual Entry</span>}
                                 {meal.foods.map((food, idx) => (
                                   <span key={idx} className="food-tag">
-                                    {food.foodName} ({food.quantity}g)
+                                    {food.foodName} ({food.quantity}g) {meal.foodState && `- ${meal.foodState}`}
                                   </span>
                                 ))}
                               </div>
