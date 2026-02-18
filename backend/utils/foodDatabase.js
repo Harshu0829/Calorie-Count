@@ -29,6 +29,13 @@ const FOOD_DATABASE = {
     beef: { calories: 250, protein: 26, carbs: 0, fat: 17, category: 'protein', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 18, iron: 2.6 } },
     pork: { calories: 242, protein: 27, carbs: 0, fat: 14, category: 'protein', micronutrients: { vitaminA: 2, vitaminC: 0.6, calcium: 19, iron: 0.9 } },
     fish: { calories: 206, protein: 22, carbs: 0, fat: 12, category: 'protein', micronutrients: { vitaminA: 50, vitaminC: 0, calcium: 15, iron: 0.5 } },
+    idli: { calories: 58, protein: 2, carbs: 12, fat: 0.1, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 10, iron: 0.5 } },
+    dosa: { calories: 168, protein: 3.9, carbs: 29, fat: 3.7, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 15, iron: 1.0 } },
+    sambar: { calories: 110, protein: 5, carbs: 18, fat: 2, category: 'vegetable', micronutrients: { vitaminA: 200, vitaminC: 5, calcium: 40, iron: 1.2 } },
+    chole: { calories: 180, protein: 8, carbs: 25, fat: 6, category: 'protein', micronutrients: { vitaminA: 50, vitaminC: 4, calcium: 50, iron: 3.0 } },
+    paratha: { calories: 260, protein: 5, carbs: 40, fat: 8, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 20, iron: 1.5 } },
+    white_rice: { calories: 130, protein: 2.7, carbs: 28, fat: 0.3, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 10, iron: 0.2 } },
+    curd_rice: { calories: 190, protein: 5, carbs: 30, fat: 5, category: 'dairy', micronutrients: { vitaminA: 50, vitaminC: 0, calcium: 120, iron: 0.2 } },
 };
 
 // Base weights for estimation (in grams)
@@ -111,15 +118,34 @@ async function calculateFoodNutrition(foodName, weightGrams, foodState = 'cooked
     const statePrefix = foodState === 'raw' ? 'raw_' : 'boiled_';
     foodData = FOOD_DATABASE[statePrefix + searchKey] || FOOD_DATABASE[searchKey];
 
-    // 2. Fuzzy match if no exact match
+    // 2. Limited Fuzzy match - Only if search name is very short and matches a key exactly
     if (!foodData) {
-        for (const [key, value] of Object.entries(FOOD_DATABASE)) {
-            if (searchKey.includes(key) || key.includes(searchKey)) {
-                foodData = value;
+        // Avoid greedy matching: "rice" shouldn't match "rice cake" if "rice cake" isn't in DB.
+        // Instead, if the user entered "White Rice", and "white_rice" is in DB, it should match.
+        const possibleKeys = Object.keys(FOOD_DATABASE);
+
+        // Try to find a key that is contained in the searchKey as a whole word, 
+        // or searchKey matches a key almost exactly.
+        for (const key of possibleKeys) {
+            const normalizedKey = key.replace(/_/g, ' ');
+            const normalizedSearch = foodName.toLowerCase().trim();
+
+            if (normalizedSearch === normalizedKey) {
+                foodData = FOOD_DATABASE[key];
                 break;
             }
         }
     }
+
+    // 3. Special handling for generic terms to prevent wrong matches
+    const genericTerms = ['rice', 'bread', 'apple', 'milk', 'egg'];
+    if (!foodData && genericTerms.includes(searchKey)) {
+        // If it's JUST the generic term, we can use the DB
+        foodData = FOOD_DATABASE[searchKey];
+    }
+
+    // If it's a complex name like "Chicken Burger" and not found exactly, 
+    // DON'T fall back to "Chicken" in DB. Let AI handle it.
 
     // If found in local database, calculate and return
     if (foodData) {

@@ -20,7 +20,8 @@ const model = genAI.getGenerativeModel({
 exports.getNutritionalInfoFromText = async (foodName, weightGrams, foodState = 'cooked') => {
     try {
         const prompt = `Analyze this food description: "${foodName}" which is in a "${foodState}" state, for a portion of ${weightGrams}g. 
-        Provide nutritional information. Return a JSON object with this exact structure:
+        CRITICAL: Provide nutritional information EXACTLY for the provided weight of ${weightGrams}g.
+        Return a JSON object with this exact structure:
 {
   "foodName": "name of the food",
   "calories": number,
@@ -28,6 +29,7 @@ exports.getNutritionalInfoFromText = async (foodName, weightGrams, foodState = '
   "carbs": number (in grams),
   "fat": number (in grams),
   "servingSize": ${weightGrams},
+  "calculatedForWeight": ${weightGrams},
   "micronutrients": {
     "vitaminA": number (in mcg),
     "vitaminC": number (in mg),
@@ -71,14 +73,17 @@ exports.getNutritionalInfoFromText = async (foodName, weightGrams, foodState = '
  */
 exports.analyzeFoodImage = async (base64Image, mimeType) => {
     try {
-        const prompt = `Analyze this food image and provide nutritional information. Return a JSON object with this exact structure:
+        const prompt = `Analyze this food image and provide nutritional information. 
+        CRITICAL: If you can identify the food, estimate its weight in grams and provide nutritional values BASED ON THAT ESTIMATED WEIGHT.
+        Return a JSON object with this exact structure:
 {
   "foodName": "name of the food",
   "calories": number,
   "protein": number (in grams),
   "carbs": number (in grams),
   "fat": number (in grams),
-  "servingSize": number (in grams),
+  "servingSize": number (estimate in grams),
+  "estimatedWeight": number (in grams),
   "micronutrients": {
     "vitaminA": number (in mcg),
     "vitaminC": number (in mg),
