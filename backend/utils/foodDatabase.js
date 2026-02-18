@@ -116,7 +116,11 @@ async function calculateFoodNutrition(foodName, weightGrams, foodState = 'cooked
 
     // 1. Try exact match with state prefix
     const statePrefix = foodState === 'raw' ? 'raw_' : 'boiled_';
-    foodData = FOOD_DATABASE[statePrefix + searchKey] || FOOD_DATABASE[searchKey];
+    const exactMatch = FOOD_DATABASE[statePrefix + searchKey] || FOOD_DATABASE[searchKey];
+
+    if (exactMatch) {
+        foodData = exactMatch;
+    }
 
     // 2. Limited Fuzzy match - Only if search name is very short and matches a key exactly
     if (!foodData) {
@@ -175,11 +179,22 @@ async function calculateFoodNutrition(foodName, weightGrams, foodState = 'cooked
         console.log(`Food "${foodName}" not found in local DB. Calling AI with state "${foodState}"...`);
         const aiData = await aiService.getNutritionalInfoFromText(foodName, weightGrams, foodState);
 
+        // Sanity Check: If AI returns exact same calories as weight, and it's not a calorie-dense food
+        // or if calories are inconsistent with macros, it might be a hallucination.
+        const calculatedCal = (aiData.protein * 4) + (aiData.carbs * 4) + (aiData.fat * 9);
+        const diff = Math.abs((aiData.calories || 0) - calculatedCal);
+
+        let calories = aiData.calories || 0;
+        if (diff > 50 && calculatedCal > 0) {
+            console.log(`Fixing inconsistent AI calories: ${calories} -> ${calculatedCal}`);
+            calories = Math.round(calculatedCal);
+        }
+
         return {
             food: aiData.foodName || foodName,
             weight_grams: weightGrams,
             foodState: foodState,
-            calories: aiData.calories || 0,
+            calories: calories,
             protein: aiData.protein || 0,
             carbs: aiData.carbs || 0,
             fat: aiData.fat || 0,
