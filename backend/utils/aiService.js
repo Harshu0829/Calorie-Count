@@ -1,14 +1,24 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 
-// Initialize Gemini client
-// Using GEMINI_API_KEY from environment variables
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({
-    model: "gemini-1.5-flash",
-    generationConfig: {
-        responseMimeType: "application/json",
+// Lazy initialization — ensure env vars are loaded before creating client
+let genAI = null;
+let model = null;
+
+function getModel() {
+    if (!process.env.GEMINI_API_KEY) {
+        throw new Error('GEMINI_API_KEY environment variable is not set');
     }
-});
+    if (!model) {
+        genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+        model = genAI.getGenerativeModel({
+            model: "gemini-1.5-flash",
+            generationConfig: {
+                responseMimeType: "application/json",
+            }
+        });
+    }
+    return model;
+}
 
 /**
  * Get nutritional information from text description using Gemini
@@ -39,7 +49,7 @@ exports.getNutritionalInfoFromText = async (foodName, weightGrams, foodState = '
   "confidence": number (0-1)
 }`;
 
-        const result = await model.generateContent(prompt);
+        const result = await getModel().generateContent(prompt);
         const response = await result.response;
         const responseText = response.text();
 
@@ -100,7 +110,7 @@ exports.analyzeFoodImage = async (base64Image, mimeType) => {
             }
         };
 
-        const result = await model.generateContent([prompt, imagePart]);
+        const result = await getModel().generateContent([prompt, imagePart]);
         const response = await result.response;
         const responseText = response.text();
 
