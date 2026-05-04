@@ -19,8 +19,9 @@ const FOOD_DATABASE = {
     tomato: { calories: 18, protein: 0.9, carbs: 3.9, fat: 0.2, category: 'vegetable', micronutrients: { vitaminA: 833, vitaminC: 13.7, calcium: 10, iron: 0.3 } },
     strawberry: { calories: 32, protein: 0.7, carbs: 7.7, fat: 0.3, category: 'fruit', micronutrients: { vitaminA: 12, vitaminC: 58.8, calcium: 16, iron: 0.4 } },
     paneer: { calories: 265, protein: 18.3, carbs: 3.6, fat: 20.8, category: 'dairy', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 480, iron: 0 } },
-    dal_tadka: { calories: 150, protein: 7, carbs: 20, fat: 5, category: 'protein', micronutrients: { vitaminA: 100, vitaminC: 2, calcium: 30, iron: 1.5 } },
-    roti: { calories: 120, protein: 3, carbs: 25, fat: 0.5, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 15, iron: 1.2 } },
+    dal_tadka: { calories: 117, protein: 6.8, carbs: 19, fat: 1.5, category: 'protein', micronutrients: { vitaminA: 100, vitaminC: 2, calcium: 30, iron: 1.5 } },
+    roti: { calories: 297, protein: 10, carbs: 61, fat: 3.7, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 15, iron: 1.2 } },
+    chapati: { calories: 297, protein: 10, carbs: 61, fat: 3.7, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 15, iron: 1.2 } },
     chicken_curry: { calories: 240, protein: 25, carbs: 8, fat: 12, category: 'protein', micronutrients: { vitaminA: 150, vitaminC: 5, calcium: 25, iron: 1.8 } },
     spinach: { calories: 23, protein: 2.9, carbs: 3.6, fat: 0.4, category: 'vegetable', micronutrients: { vitaminA: 9377, vitaminC: 28.1, calcium: 99, iron: 2.7 } },
     soya_chunks: { calories: 345, protein: 52, carbs: 33, fat: 0.5, category: 'protein', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 350, iron: 20 } },
@@ -32,10 +33,53 @@ const FOOD_DATABASE = {
     idli: { calories: 58, protein: 2, carbs: 12, fat: 0.1, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 10, iron: 0.5 } },
     dosa: { calories: 168, protein: 3.9, carbs: 29, fat: 3.7, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 15, iron: 1.0 } },
     sambar: { calories: 110, protein: 5, carbs: 18, fat: 2, category: 'vegetable', micronutrients: { vitaminA: 200, vitaminC: 5, calcium: 40, iron: 1.2 } },
-    chole: { calories: 180, protein: 8, carbs: 25, fat: 6, category: 'protein', micronutrients: { vitaminA: 50, vitaminC: 4, calcium: 50, iron: 3.0 } },
+    chole: { calories: 166, protein: 9, carbs: 27, fat: 2.5, category: 'protein', micronutrients: { vitaminA: 50, vitaminC: 4, calcium: 50, iron: 3.0 } },
     paratha: { calories: 260, protein: 5, carbs: 40, fat: 8, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 20, iron: 1.5 } },
     white_rice: { calories: 130, protein: 2.7, carbs: 28, fat: 0.3, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 10, iron: 0.2 } },
     curd_rice: { calories: 190, protein: 5, carbs: 30, fat: 5, category: 'dairy', micronutrients: { vitaminA: 50, vitaminC: 0, calcium: 120, iron: 0.2 } },
+    // Popular Indian foods
+    naan: { calories: 290, protein: 8.7, carbs: 50, fat: 5.7, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 20, iron: 2.0 } },
+    biryani: { calories: 175, protein: 7.5, carbs: 22, fat: 6.5, category: 'grain', micronutrients: { vitaminA: 80, vitaminC: 3, calcium: 20, iron: 1.0 } },
+    chicken_biryani: { calories: 175, protein: 7.5, carbs: 22, fat: 6.5, category: 'grain', micronutrients: { vitaminA: 80, vitaminC: 3, calcium: 20, iron: 1.0 } },
+    butter_chicken: { calories: 148, protein: 14, carbs: 6, fat: 8, category: 'protein', micronutrients: { vitaminA: 200, vitaminC: 3, calcium: 30, iron: 1.5 } },
+    palak_paneer: { calories: 130, protein: 7, carbs: 5, fat: 9.5, category: 'protein', micronutrients: { vitaminA: 4000, vitaminC: 15, calcium: 200, iron: 2.0 } },
+    rajma: { calories: 127, protein: 8.7, carbs: 22.8, fat: 0.5, category: 'protein', micronutrients: { vitaminA: 0, vitaminC: 1, calcium: 40, iron: 2.5 } },
+    pizza: { calories: 266, protein: 11.4, carbs: 33, fat: 10.4, category: 'grain', micronutrients: { vitaminA: 150, vitaminC: 2, calcium: 180, iron: 2.0 } },
+    oatmeal: { calories: 68, protein: 2.5, carbs: 12, fat: 1.4, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 9, iron: 1.5 } },
+    oats: { calories: 68, protein: 2.5, carbs: 12, fat: 1.4, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 9, iron: 1.5 } },
+    poha: { calories: 110, protein: 2, carbs: 25, fat: 0.2, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 10, iron: 1.0 } },
+    upma: { calories: 136, protein: 3, carbs: 22, fat: 4, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 15, iron: 0.8 } },
+    pav_bhaji: { calories: 152, protein: 4, carbs: 25, fat: 4, category: 'grain', micronutrients: { vitaminA: 200, vitaminC: 8, calcium: 20, iron: 1.0 } },
+    vada_pav: { calories: 280, protein: 7, carbs: 45, fat: 8, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 5, calcium: 15, iron: 1.0 } },
+    bhel_puri: { calories: 196, protein: 5, carbs: 35, fat: 4, category: 'grain', micronutrients: { vitaminA: 50, vitaminC: 3, calcium: 10, iron: 1.0 } },
+    dhokla: { calories: 156, protein: 6, carbs: 24, fat: 4, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 15, iron: 1.2 } },
+    khichdi: { calories: 120, protein: 4, carbs: 20, fat: 2, category: 'grain', micronutrients: { vitaminA: 10, vitaminC: 0, calcium: 15, iron: 1.0 } },
+    dal: { calories: 117, protein: 6.8, carbs: 19, fat: 1.5, category: 'protein', micronutrients: { vitaminA: 100, vitaminC: 2, calcium: 30, iron: 1.5 } },
+    mutton: { calories: 289, protein: 25, carbs: 0, fat: 21, category: 'protein', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 12, iron: 2.5 } },
+    mutton_curry: { calories: 189, protein: 18, carbs: 5, fat: 11, category: 'protein', micronutrients: { vitaminA: 50, vitaminC: 3, calcium: 15, iron: 2.0 } },
+    ghee: { calories: 900, protein: 0, carbs: 0, fat: 100, category: 'dairy', micronutrients: { vitaminA: 840, vitaminC: 0, calcium: 0, iron: 0 } },
+    curd: { calories: 63, protein: 3.3, carbs: 4, fat: 3.7, category: 'dairy', micronutrients: { vitaminA: 27, vitaminC: 0, calcium: 120, iron: 0.1 } },
+    dahi: { calories: 63, protein: 3.3, carbs: 4, fat: 3.7, category: 'dairy', micronutrients: { vitaminA: 27, vitaminC: 0, calcium: 120, iron: 0.1 } },
+    lassi: { calories: 80, protein: 3, carbs: 14, fat: 1.3, category: 'dairy', micronutrients: { vitaminA: 30, vitaminC: 1, calcium: 100, iron: 0.1 } },
+    chai: { calories: 50, protein: 1, carbs: 8, fat: 1.5, category: 'beverage', micronutrients: { vitaminA: 10, vitaminC: 0, calcium: 30, iron: 0.2 } },
+    tea: { calories: 50, protein: 1, carbs: 8, fat: 1.5, category: 'beverage', micronutrients: { vitaminA: 10, vitaminC: 0, calcium: 30, iron: 0.2 } },
+    jalebi: { calories: 450, protein: 1, carbs: 80, fat: 14, category: 'other', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 10, iron: 0.5 } },
+    gulab_jamun: { calories: 319, protein: 5, carbs: 50, fat: 11, category: 'other', micronutrients: { vitaminA: 20, vitaminC: 0, calcium: 30, iron: 0.5 } },
+    halwa: { calories: 351, protein: 4, carbs: 50, fat: 15, category: 'other', micronutrients: { vitaminA: 200, vitaminC: 0, calcium: 20, iron: 1.0 } },
+    kheer: { calories: 100, protein: 3, carbs: 15, fat: 3.1, category: 'dairy', micronutrients: { vitaminA: 30, vitaminC: 0, calcium: 80, iron: 0.2 } },
+    burger: { calories: 295, protein: 17, carbs: 24, fat: 14, category: 'other', micronutrients: { vitaminA: 50, vitaminC: 2, calcium: 100, iron: 2.5 } },
+    sandwich: { calories: 250, protein: 10, carbs: 30, fat: 10, category: 'grain', micronutrients: { vitaminA: 40, vitaminC: 3, calcium: 80, iron: 1.5 } },
+    maggi: { calories: 205, protein: 4.6, carbs: 29, fat: 8.2, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 10, iron: 1.0 } },
+    noodles: { calories: 205, protein: 4.6, carbs: 29, fat: 8.2, category: 'grain', micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 10, iron: 1.0 } },
+    fried_rice: { calories: 163, protein: 4, carbs: 24, fat: 6, category: 'grain', micronutrients: { vitaminA: 50, vitaminC: 2, calcium: 15, iron: 0.8 } },
+    pulao: { calories: 145, protein: 3, carbs: 22, fat: 5, category: 'grain', micronutrients: { vitaminA: 40, vitaminC: 2, calcium: 12, iron: 0.7 } },
+    sweet_potato: { calories: 87, protein: 1.6, carbs: 20, fat: 0.1, category: 'vegetable', micronutrients: { vitaminA: 14187, vitaminC: 2.4, calcium: 30, iron: 0.6 } },
+    paneer_tikka: { calories: 210, protein: 15, carbs: 6, fat: 14, category: 'protein', micronutrients: { vitaminA: 100, vitaminC: 5, calcium: 300, iron: 0.5 } },
+    tandoori_chicken: { calories: 148, protein: 22, carbs: 3, fat: 5, category: 'protein', micronutrients: { vitaminA: 80, vitaminC: 2, calcium: 15, iron: 1.5 } },
+    aloo_gobi: { calories: 80, protein: 2, carbs: 10, fat: 3.5, category: 'vegetable', micronutrients: { vitaminA: 100, vitaminC: 30, calcium: 20, iron: 0.5 } },
+    matar_paneer: { calories: 140, protein: 7, carbs: 8, fat: 9, category: 'protein', micronutrients: { vitaminA: 100, vitaminC: 5, calcium: 200, iron: 1.0 } },
+    aloo_paratha: { calories: 300, protein: 5.5, carbs: 42, fat: 12, category: 'grain', micronutrients: { vitaminA: 10, vitaminC: 5, calcium: 20, iron: 1.5 } },
+    samosa: { calories: 262, protein: 5, carbs: 28, fat: 14.5, category: 'other', micronutrients: { vitaminA: 20, vitaminC: 5, calcium: 15, iron: 1.0 } },
 };
 
 // Base weights for estimation (in grams)
@@ -112,7 +156,23 @@ async function calculateFoodNutrition(foodName, weightGrams, foodState = 'cooked
     let searchKey = foodNameLower;
 
     // Handle common aliases
-    if (searchKey === 'soya') searchKey = 'soya_chunks';
+    const ALIASES = {
+        'soya': 'soya_chunks', 'chapathi': 'chapati', 'roti': 'roti', 'chapati': 'chapati',
+        'dal': 'dal_tadka', 'daal': 'dal_tadka', 'toor_dal': 'dal_tadka', 'arhar_dal': 'dal_tadka',
+        'chana': 'chole', 'chickpea': 'chole', 'chickpeas': 'chole',
+        'kidney_beans': 'rajma', 'rajmah': 'rajma',
+        'yoghurt': 'yogurt', 'dahi': 'dahi', 'curd': 'curd',
+        'chawal': 'rice', 'basmati': 'rice', 'white_rice': 'rice',
+        'anda': 'egg', 'eggs': 'egg',
+        'murgh': 'chicken_curry', 'chicken': 'chicken_breast',
+        'oats': 'oatmeal', 'porridge': 'oatmeal',
+        'instant_noodles': 'maggi', 'maggie': 'maggi',
+        'tea': 'chai', 'indian_tea': 'chai',
+        'paneer_butter_masala': 'butter_chicken',
+        'palak_panir': 'palak_paneer', 'saag_paneer': 'palak_paneer',
+        'gobi_aloo': 'aloo_gobi',
+    };
+    if (ALIASES[searchKey]) searchKey = ALIASES[searchKey];
 
     // 1. Try exact match with state prefix
     const statePrefix = foodState === 'raw' ? 'raw_' : 'boiled_';
@@ -205,16 +265,17 @@ async function calculateFoodNutrition(foodName, weightGrams, foodState = 'cooked
         };
     } catch (error) {
         console.error('AI estimation failed, falling back to defaults:', error);
-        // Final fallback to defaults if AI fails
+        // Final fallback: use reasonable average food values per 100g
+        const fallbackMultiplier = weightGrams / 100.0;
         return {
             food: foodName,
             weight_grams: weightGrams,
-            calories: 135,
-            protein: 17.5,
-            carbs: 11.5,
-            fat: 1.2,
+            calories: Math.round(200 * fallbackMultiplier),
+            protein: Math.round(8 * fallbackMultiplier * 10) / 10,
+            carbs: Math.round(25 * fallbackMultiplier * 10) / 10,
+            fat: Math.round(6 * fallbackMultiplier * 10) / 10,
             category: 'other',
-            micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 30, iron: 1.5 },
+            micronutrients: { vitaminA: 0, vitaminC: 0, calcium: 20, iron: 1.0 },
             dataSource: 'fallback'
         };
     }
