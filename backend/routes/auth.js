@@ -475,8 +475,12 @@ router.post('/google', async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Google OAuth error:', error);
-        res.status(500).json({ message: 'Google authentication failed. Please try again.' });
+        console.error('Google OAuth error details:', {
+            message: error.message,
+            clientIdPresent: !!process.env.GOOGLE_CLIENT_ID,
+            clientIdValue: process.env.GOOGLE_CLIENT_ID ? process.env.GOOGLE_CLIENT_ID.substring(0, 20) + '...' : 'UNDEFINED'
+        });
+        res.status(500).json({ message: error.message || 'Google authentication failed. Please try again.' });
     }
 });
 
