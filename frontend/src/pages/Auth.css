@@ -214,3 +214,53 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* Google OAuth Button */
+.google-auth-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 6px;
+  margin-top: 4px;
+}
+
+.google-auth-wrapper > div {
+  width: 100% !important;
+}
+
+.google-auth-wrapper iframe {
+  width: 100% !important;
+  border-radius: 10px !important;
+}
+
+/* "or" Divider */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 14px;
+  color: var(--text-muted, #888);
+  font-size: 0.85rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border-color, #2a2a3e);
+}
+
+/* Error Message */
+.error-message {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  color: #f87171;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  margin-bottom: 16px;
+  animation: slideDown 0.3s ease-out;
+}

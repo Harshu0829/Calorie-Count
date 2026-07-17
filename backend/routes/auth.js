@@ -1,9 +1,12 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
+const { OAuth2Client } = require('google-auth-library');
 const User = require('../models/User');
 const auth = require('../middleware/auth');
 const { sendPasswordResetEmail } = require('../utils/emailService');
+
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const rateLimit = require('express-rate-limit');
 
@@ -386,13 +389,28 @@ router.post('/reset-password/:token', async (req, res) => {
     }
 });
 
-// Google OAuth callback
+// Google OAuth callback — verifies ID token server-side
 router.post('/google', async (req, res) => {
     try {
-        const { googleId, email, name, profilePicture } = req.body;
+        const { credential } = req.body;
 
-        if (!googleId || !email) {
-            return res.status(400).json({ message: 'Missing required Google OAuth data' });
+        if (!credential) {
+            return res.status(400).json({ message: 'Missing Google credential token' });
+        }
+
+        // Verify the Google ID token server-side
+        const ticket = await googleClient.verifyIdToken({
+            idToken: credential,
+            audience: process.env.GOOGLE_CLIENT_ID
+        });
+        const payload = ticket.getPayload();
+
+        const email = payload.email;
+        const name = payload.name;
+        const profilePicture = payload.picture;
+
+        if (!email) {
+            return res.status(400).json({ message: 'Could not retrieve email from Google account' });
         }
 
         // Check if user exists
@@ -406,19 +424,23 @@ router.post('/google', async (req, res) => {
                 profilePicture,
                 authProvider: 'google',
                 hasCompletedOnboarding: false
-                // No password needed for OAuth users
             });
             await user.save();
         } else {
-            // Update existing user if they signed up with different method
+            // Update profile picture if changed
+            let needsSave = false;
             if (user.authProvider !== 'google') {
                 user.authProvider = 'google';
-                if (profilePicture) user.profilePicture = profilePicture;
-                await user.save();
+                needsSave = true;
             }
+            if (profilePicture && user.profilePicture !== profilePicture) {
+                user.profilePicture = profilePicture;
+                needsSave = true;
+            }
+            if (needsSave) await user.save();
         }
 
-        // Generate token
+        // Generate JWT
         const token = jwt.sign(
             { userId: user._id },
             process.env.JWT_SECRET,
@@ -446,12 +468,15 @@ router.post('/google', async (req, res) => {
                 hasCompletedOnboarding: user.hasCompletedOnboarding,
                 targetWeight: user.targetWeight,
                 goalType: user.goalType,
-                medicalHistory: user.medicalHistory
+                medicalHistory: user.medicalHistory,
+                weightHistory: (user.weightHistory || []).slice(-10),
+                heightHistory: (user.heightHistory || []).slice(-10),
+                goalHistory: (user.goalHistory || []).slice(-10)
             }
         });
     } catch (error) {
         console.error('Google OAuth error:', error);
-        res.status(500).json({ message: error.message });
+        res.status(500).json({ message: 'Google authentication failed. Please try again.' });
     }
 });
 

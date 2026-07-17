@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { GoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import './Auth.css';
 
@@ -10,7 +11,7 @@ const Login = () => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
@@ -36,6 +37,29 @@ const Login = () => {
     setLoading(false);
   };
 
+  const handleGoogleSuccess = async (response) => {
+    setError('');
+    setLoading(true);
+
+    const result = await googleLogin(response.credential);
+
+    if (result.success) {
+      if (!result.user.hasCompletedOnboarding) {
+        navigate('/onboarding');
+      } else {
+        navigate('/dashboard');
+      }
+    } else {
+      setError(result.message);
+    }
+
+    setLoading(false);
+  };
+
+  const handleGoogleError = () => {
+    setError('Google sign-in failed. Please try again or use email/password.');
+  };
+
   return (
     <div className="auth-page">
       <div className="auth-container">
@@ -44,6 +68,24 @@ const Login = () => {
           <p className="auth-subtitle">Welcome back! Please login to your account.</p>
 
           {error && <div className="error-message">{error}</div>}
+
+          {/* Google OAuth Button */}
+          <div className="google-auth-wrapper">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              useOneTap={false}
+              theme="filled_black"
+              shape="rectangular"
+              size="large"
+              text="continue_with"
+              width="100%"
+            />
+          </div>
+
+          <div className="auth-divider">
+            <span>or</span>
+          </div>
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
