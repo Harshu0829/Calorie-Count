@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FaUser, FaCog, FaSignOutAlt, FaSave, FaHistory } from 'react-icons/fa';
+import { FaUser, FaCog, FaSignOutAlt, FaSave, FaHistory, FaRedoAlt } from 'react-icons/fa';
 import api from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import BottomNavigation from '../components/BottomNavigation';
+import { computeNutritionPlan } from '../utils/nutritionCalc';
 import './Profile.css';
 
 const Profile = () => {
@@ -65,6 +66,57 @@ const Profile = () => {
     }));
   };
 
+  // ── Calculation helpers (via single authoritative pipeline) ──────────────
+  // We pass customCalorieGoal=null so recommendations come purely from biometrics.
+  // The active goal stored in formData.dailyCalorieGoal is what matters for macro display.
+  const recommendationPlan = computeNutritionPlan({
+    weight: formData.weight,
+    height: formData.height,
+    age: formData.age,
+    gender: user?.gender,
+    activityLevel: formData.activityLevel,
+    medicalHistory: formData.medicalHistory,
+    goalType: user?.goalType || 'maintain',
+  });
+
+  // Macros derived from the ACTIVE calorie goal (what the user has set)
+  const activeMacroPlan = computeNutritionPlan({
+    weight: formData.weight,
+    height: formData.height,
+    age: formData.age,
+    gender: user?.gender,
+    activityLevel: formData.activityLevel,
+    medicalHistory: formData.medicalHistory,
+    goalType: user?.goalType || 'maintain',
+    customCalorieGoal: formData.dailyCalorieGoal,
+  });
+
+  const recommendedCalories = !recommendationPlan.error ? recommendationPlan.recommendedCalorieTarget : null;
+  const recommendedMacros = !recommendationPlan.error ? {
+    protein: recommendationPlan.dailyProteinGoal,
+    carbs: recommendationPlan.dailyCarbsGoal,
+    fat: recommendationPlan.dailyFatGoal,
+  } : null;
+
+  /**
+   * Recalculate all goals from the current profile biometrics.
+   * This re-derives the recommended targets and overwrites the form values.
+   * The user can still manually edit them after.
+   */
+  const handleRecalculate = () => {
+    if (recommendationPlan.error) {
+      alert(`Cannot recalculate: ${recommendationPlan.error}`);
+      return;
+    }
+    setFormData(prev => ({
+      ...prev,
+      dailyCalorieGoal: recommendationPlan.dailyCalorieGoal,
+      dailyProteinGoal: recommendationPlan.dailyProteinGoal,
+      dailyCarbsGoal: recommendationPlan.dailyCarbsGoal,
+      dailyFatGoal: recommendationPlan.dailyFatGoal,
+    }));
+  };
+
   const handleSave = async () => {
     try {
       setLoading(true);
@@ -85,75 +137,6 @@ const Profile = () => {
     }
   };
 
-  const calculateBMR = () => {
-    if (!formData.weight || !formData.height || !formData.age) return null;
-
-    const weight = formData.weight;
-    const height = formData.height / 100; // Convert cm to m
-    const age = formData.age;
-
-    // Mifflin-St Jeor Equation
-    let bmr = (10 * weight) + (6.25 * height * 100) - (5 * age);
-
-    return Math.round(bmr);
-  };
-
-  const calculateTDEE = () => {
-    const bmr = calculateBMR();
-    if (!bmr) return null;
-
-    const activityMultipliers = {
-      sedentary: 1.2,
-      lightly_active: 1.375,
-      moderately_active: 1.55,
-      very_active: 1.725,
-      extremely_active: 1.9
-    };
-
-    const maintenanceCalories = Math.round(bmr * (activityMultipliers[formData.activityLevel] || 1.2));
-
-    if (formData.medicalHistory === 'hypothyroidism') {
-      return Math.round(maintenanceCalories * 0.9);
-    }
-
-    return maintenanceCalories;
-  };
-
-  const suggestedCalorieGoal = calculateTDEE() || formData.dailyCalorieGoal;
-
-  // Calculate suggested macronutrient goals
-  const calculateSuggestedMacros = () => {
-    const tdee = calculateTDEE();
-    const weight = formData.weight;
-
-    if (!tdee || !weight) return null;
-
-    // Protein
-    let suggestedProtein;
-    if (formData.medicalHistory === 'kidney_issues') {
-      suggestedProtein = Math.round(weight * 1.0);
-    } else {
-      suggestedProtein = Math.round(weight * 2);
-    }
-
-    // Carbs & Fat
-    let suggestedCarbs, suggestedFat;
-    if (formData.medicalHistory === 'diabetes') {
-      suggestedCarbs = Math.round((tdee * 0.35) / 4);
-      suggestedFat = Math.round((tdee - (suggestedProtein * 4) - (suggestedCarbs * 4)) / 9);
-    } else {
-      suggestedFat = Math.round((tdee * 0.25) / 9);
-      suggestedCarbs = Math.round((tdee - (suggestedProtein * 4) - (suggestedFat * 9)) / 4);
-    }
-
-    return {
-      protein: suggestedProtein,
-      carbs: suggestedCarbs,
-      fat: suggestedFat
-    };
-  };
-
-  const suggestedMacros = calculateSuggestedMacros();
 
   if (!user) {
     return (
@@ -282,9 +265,16 @@ const Profile = () => {
                     </option>
                   ))}
                 </select>
-                {suggestedCalorieGoal && (
+                {recommendedCalories && (
                   <p className="form-hint">
-                    Suggested daily calorie goal: {suggestedCalorieGoal} kcal
+                    Estimated maintenance: {recommendationPlan.maintenanceCalories} kcal
+                    {' · '}
+                    Recommended target: <strong>{recommendedCalories} kcal</strong>
+                    {formData.dailyCalorieGoal !== recommendedCalories && (
+                      <span style={{ color: 'var(--warning-color)' }}>
+                        {' '}(your goal: {formData.dailyCalorieGoal} kcal)
+                      </span>
+                    )}
                   </p>
                 )}
               </div>
@@ -311,7 +301,18 @@ const Profile = () => {
             </div>
 
             <div className="form-section">
-              <h3>Daily Goals</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                <h3>Daily Goals</h3>
+                <button
+                  type="button"
+                  onClick={handleRecalculate}
+                  className="btn btn-secondary"
+                  title="Recalculate all goals from your current biometrics"
+                  style={{ fontSize: '0.8rem', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                >
+                  <FaRedoAlt /> Recalculate from profile
+                </button>
+              </div>
               <div className="goals-grid">
                 <div className="form-group">
                   <label>Calorie Goal (kcal)</label>
@@ -321,11 +322,16 @@ const Profile = () => {
                     value={formData.dailyCalorieGoal}
                     onChange={handleChange}
                     className="form-input"
-                    min="1000"
-                    max="5000"
+                    min="1200"
+                    max="6000"
                     step="50"
                     placeholder="Enter calorie goal"
                   />
+                  {recommendedCalories && formData.dailyCalorieGoal !== recommendedCalories && (
+                    <p className="form-hint" style={{ color: 'var(--warning-color)' }}>
+                      Note: recommended target is {recommendedCalories} kcal. Your macro targets below are calculated from your custom goal of {formData.dailyCalorieGoal} kcal.
+                    </p>
+                  )}
                 </div>
 
                 <div className="form-group">
@@ -337,12 +343,12 @@ const Profile = () => {
                     onChange={handleChange}
                     className="form-input"
                     min="20"
-                    max="300"
+                    max="400"
                     placeholder="Enter protein goal"
                   />
-                  {suggestedMacros && (
+                  {recommendedMacros && (
                     <p className="form-hint">
-                      Suggested protein goal: {suggestedMacros.protein}g (1.8g per kg body weight)
+                      Recommended from {formData.dailyCalorieGoal} kcal goal: {!activeMacroPlan.error ? activeMacroPlan.dailyProteinGoal : '—'}g protein
                     </p>
                   )}
                 </div>
@@ -356,12 +362,12 @@ const Profile = () => {
                     onChange={handleChange}
                     className="form-input"
                     min="50"
-                    max="500"
+                    max="600"
                     placeholder="Enter carbs goal"
                   />
-                  {suggestedMacros && (
+                  {recommendedMacros && (
                     <p className="form-hint">
-                      Suggested carbs goal: {suggestedMacros.carbs}g (50% of daily calories)
+                      Recommended from {formData.dailyCalorieGoal} kcal goal: {!activeMacroPlan.error ? activeMacroPlan.dailyCarbsGoal : '—'}g carbs
                     </p>
                   )}
                 </div>
@@ -375,12 +381,12 @@ const Profile = () => {
                     onChange={handleChange}
                     className="form-input"
                     min="20"
-                    max="200"
+                    max="250"
                     placeholder="Enter fat goal"
                   />
-                  {suggestedMacros && (
+                  {recommendedMacros && (
                     <p className="form-hint">
-                      Suggested fat goal: {suggestedMacros.fat}g (25% of daily calories)
+                      Recommended from {formData.dailyCalorieGoal} kcal goal: {!activeMacroPlan.error ? activeMacroPlan.dailyFatGoal : '—'}g fat
                     </p>
                   )}
                 </div>

@@ -191,6 +191,7 @@ router.put('/profile', auth, async (req, res) => {
             height,
             weight,
             activityLevel,
+            medicalHistory,
             dailyCalorieGoal,
             dailyProteinGoal,
             dailyCarbsGoal,
@@ -204,26 +205,53 @@ router.put('/profile', auth, async (req, res) => {
 
         // Update fields and history
         if (name) user.name = name;
-        if (age !== undefined) user.age = age;
+        if (age !== undefined) user.age = Number(age);
+        if (medicalHistory !== undefined) user.medicalHistory = medicalHistory;
 
-        if (height !== undefined && height !== user.height) {
-            user.heightHistory.push({ height: user.height, date: new Date() });
-            user.height = height;
+        if (height !== undefined && Number(height) !== user.height) {
+            if (user.height) user.heightHistory.push({ height: user.height, date: new Date() });
+            user.height = Number(height);
         }
 
-        if (weight !== undefined && weight !== user.weight) {
-            user.weightHistory.push({ weight: user.weight, date: new Date() });
-            user.weight = weight;
+        if (weight !== undefined && Number(weight) !== user.weight) {
+            if (user.weight) user.weightHistory.push({ weight: user.weight, date: new Date() });
+            user.weight = Number(weight);
         }
 
         if (activityLevel) user.activityLevel = activityLevel;
 
-        // Check if any goal changed
+        // Determine the active calorie goal being set
+        const newCalorieGoal = dailyCalorieGoal !== undefined ? Number(dailyCalorieGoal) : user.dailyCalorieGoal;
+
+        // If calorie goal is explicitly set by user, recompute macros from it
+        // unless the user also explicitly set macro values (all three present)
+        const userSetAllMacros = dailyProteinGoal !== undefined &&
+            dailyCarbsGoal !== undefined &&
+            dailyFatGoal !== undefined;
+
+        let newProtein = dailyProteinGoal !== undefined ? Number(dailyProteinGoal) : user.dailyProteinGoal;
+        let newCarbs = dailyCarbsGoal !== undefined ? Number(dailyCarbsGoal) : user.dailyCarbsGoal;
+        let newFat = dailyFatGoal !== undefined ? Number(dailyFatGoal) : user.dailyFatGoal;
+
+        // Recompute macros from the calorie goal if user did not specify all macros explicitly
+        if (!userSetAllMacros && user.weight && newCalorieGoal) {
+            const { calculateMacros } = require('../utils/nutritionCalc');
+            const recomputed = calculateMacros({
+                calorieGoal: newCalorieGoal,
+                weight: user.weight,
+                medicalHistory: user.medicalHistory || 'none',
+            });
+            newProtein = recomputed.protein;
+            newCarbs = recomputed.carbs;
+            newFat = recomputed.fat;
+        }
+
+        // Check if any goal actually changed before recording history
         const goalsChanged =
-            (dailyCalorieGoal !== undefined && dailyCalorieGoal !== user.dailyCalorieGoal) ||
-            (dailyProteinGoal !== undefined && dailyProteinGoal !== user.dailyProteinGoal) ||
-            (dailyCarbsGoal !== undefined && dailyCarbsGoal !== user.dailyCarbsGoal) ||
-            (dailyFatGoal !== undefined && dailyFatGoal !== user.dailyFatGoal);
+            newCalorieGoal !== user.dailyCalorieGoal ||
+            newProtein !== user.dailyProteinGoal ||
+            newCarbs !== user.dailyCarbsGoal ||
+            newFat !== user.dailyFatGoal;
 
         if (goalsChanged) {
             user.goalHistory.push({
@@ -235,10 +263,10 @@ router.put('/profile', auth, async (req, res) => {
             });
         }
 
-        if (dailyCalorieGoal !== undefined) user.dailyCalorieGoal = dailyCalorieGoal;
-        if (dailyProteinGoal !== undefined) user.dailyProteinGoal = dailyProteinGoal;
-        if (dailyCarbsGoal !== undefined) user.dailyCarbsGoal = dailyCarbsGoal;
-        if (dailyFatGoal !== undefined) user.dailyFatGoal = dailyFatGoal;
+        user.dailyCalorieGoal = newCalorieGoal;
+        user.dailyProteinGoal = newProtein;
+        user.dailyCarbsGoal = newCarbs;
+        user.dailyFatGoal = newFat;
 
         await user.save();
 
@@ -252,6 +280,7 @@ router.put('/profile', auth, async (req, res) => {
                 height: user.height,
                 weight: user.weight,
                 activityLevel: user.activityLevel,
+                medicalHistory: user.medicalHistory,
                 dailyCalorieGoal: user.dailyCalorieGoal,
                 dailyProteinGoal: user.dailyProteinGoal,
                 dailyCarbsGoal: user.dailyCarbsGoal,
@@ -273,14 +302,12 @@ router.put('/profile', auth, async (req, res) => {
 router.post('/onboarding', auth, async (req, res) => {
     try {
         const updates = req.body;
-        // req.user is already populated by auth middleware
         const user = req.user;
 
         if (!user) {
             return res.status(404).json({ message: 'User not found' });
         }
 
-        // Update fields
         const allowedUpdates = [
             'age', 'gender', 'height', 'weight', 'activityLevel',
             'dailyCalorieGoal', 'dailyProteinGoal', 'dailyCarbsGoal', 'dailyFatGoal',
@@ -293,14 +320,40 @@ router.post('/onboarding', auth, async (req, res) => {
             }
         });
 
+        // Server-side recomputation: validate inputs and recompute goals
+        // to ensure client and server are always in sync
+        const { computeNutritionPlan } = require('../utils/nutritionCalc');
+        const plan = computeNutritionPlan({
+            weight: user.weight,
+            height: user.height,
+            age: user.age,
+            gender: user.gender,
+            activityLevel: user.activityLevel,
+            medicalHistory: user.medicalHistory,
+            goalType: user.goalType,
+            // Use client-provided goal if supplied, otherwise compute recommendation
+            customCalorieGoal: updates.dailyCalorieGoal || null,
+        });
+
+        if (!plan.error) {
+            // Recompute macros from the active calorie goal to ensure consistency
+            user.dailyCalorieGoal = plan.dailyCalorieGoal;
+            user.dailyProteinGoal = plan.dailyProteinGoal;
+            user.dailyCarbsGoal = plan.dailyCarbsGoal;
+            user.dailyFatGoal = plan.dailyFatGoal;
+        } else {
+            // Fallback: use whatever the client sent (profile may be incomplete)
+            console.warn('Onboarding: could not validate nutrition plan:', plan.error);
+        }
+
         // Always mark as completed when this endpoint is called
         user.hasCompletedOnboarding = true;
 
         // Initialize history if empty
-        if (user.weightHistory.length === 0) {
+        if (user.weightHistory.length === 0 && user.weight) {
             user.weightHistory.push({ weight: user.weight, date: new Date() });
         }
-        if (user.heightHistory.length === 0) {
+        if (user.heightHistory.length === 0 && user.height) {
             user.heightHistory.push({ height: user.height, date: new Date() });
         }
         if (user.goalHistory.length === 0) {

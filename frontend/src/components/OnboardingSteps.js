@@ -1,4 +1,5 @@
 import React from 'react';
+import { computeNutritionPlan } from '../utils/nutritionCalc';
 import {
     FaRulerVertical, FaWeight, FaBirthdayCake, FaVenusMars,
     FaBed, FaWalking, FaRunning, FaDumbbell, FaFire,
@@ -209,68 +210,28 @@ export const StepMedical = ({ data, updateData }) => {
     );
 };
 
-// Step 4: Review
+// Step 5: Review
 export const StepReview = ({ data }) => {
-    // Logic to calculate BMR/TDEE/Macros based on data
-    // Using formula from Profile.js
-    const calculateStats = () => {
-        const weight = Number(data.weight);
-        const height = Number(data.height) / 100;
-        const age = Number(data.age);
+    // Use the single authoritative pipeline — same values that will be saved
+    const plan = computeNutritionPlan({
+        weight: Number(data.weight),
+        height: Number(data.height),
+        age: Number(data.age),
+        gender: data.gender,
+        activityLevel: data.activityLevel,
+        medicalHistory: data.medicalHistory,
+        goalType: data.goalType,
+    });
 
-        if (!weight || !height || !age) return { tdee: 0, protein: 0, carbs: 0, fat: 0 };
-
-        // BMR (Mifflin-St Jeor)
-        let bmr = (10 * weight) + (6.25 * height * 100) - (5 * age);
-        if (data.gender === 'male') bmr += 5;
-        else bmr -= 161;
-
-        const activityMultipliers = {
-            sedentary: 1.2,
-            lightly_active: 1.375,
-            moderately_active: 1.55,
-            very_active: 1.725,
-            extremely_active: 1.9
+    const stats = plan.error
+        ? { tdee: 0, protein: 0, carbs: 0, fat: 0, bmr: 0 }
+        : {
+            tdee: plan.dailyCalorieGoal,
+            protein: plan.dailyProteinGoal,
+            carbs: plan.dailyCarbsGoal,
+            fat: plan.dailyFatGoal,
+            bmr: plan.bmr,
         };
-
-        const maintenanceCalories = Math.round(bmr * (activityMultipliers[data.activityLevel] || 1.2));
-
-        // Adjust for goal
-        let targetCalories = maintenanceCalories;
-        if (data.goalType === 'lose') targetCalories -= 500;
-        if (data.goalType === 'gain') targetCalories += 300;
-
-        // Medical Adjustments
-        if (data.medicalHistory === 'hypothyroidism') {
-            targetCalories = Math.round(targetCalories * 0.9); // 10% reduction due to lower metabolic rate
-        }
-
-        // Macros
-        let protein, fat, carbs;
-
-        if (data.medicalHistory === 'kidney_issues') {
-            protein = Math.round(weight * 1.0); // Reduced protein
-        } else {
-            protein = Math.round(weight * 2); // 2g per kg (standard high protein)
-        }
-
-        if (data.medicalHistory === 'diabetes') {
-            // Lower carbs for diabetes: 35% calories from carbs
-            carbs = Math.round((targetCalories * 0.35) / 4);
-            fat = Math.round((targetCalories - (protein * 4) - (carbs * 4)) / 9);
-        } else {
-            // Standard macros
-            fat = Math.round((targetCalories * 0.25) / 9);
-            carbs = Math.round((targetCalories - (protein * 4) - (fat * 9)) / 4);
-        }
-
-        return { tdee: targetCalories, protein, carbs, fat, bmr };
-    };
-
-    const stats = calculateStats();
-
-    // Pass calculated stats back up to parent implicitly via data (not ideal here, better calculated in parent)
-    // For display only here.
 
     return (
         <div className="step-animation">
